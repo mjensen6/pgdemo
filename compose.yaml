@@ -1,0 +1,29 @@
+# Throwaway playground: trust auth, no published ports, no saved data.
+services:
+  db:
+    build: .
+    environment:
+      POSTGRES_HOST_AUTH_METHOD: trust
+      PGUSER: postgres
+    command:
+      - postgres
+      - -c
+      - shared_preload_libraries=pg_stat_statements,pg_cron,pg_squeeze
+      - -c
+      - cron.database_name=postgres
+      - -c
+      - summarize_wal=on
+      - -c
+      - cron.use_background_workers=on
+      - -c
+      - max_worker_processes=32
+      - -c
+      - output_plugin_libraries=pgoutput,test_decoding,pg_squeeze
+    volumes:
+      - .:/demo:ro
+    tmpfs:
+      - /var/lib/postgresql
+    healthcheck:
+      test: pg_isready -U postgres
+      interval: 1s
+      retries: 30
