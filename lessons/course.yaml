@@ -1,0 +1,25 @@
+# The course: Sections and their lesson order.
+# A lesson's name is its permanent ID. Numbers are computed from this order.
+# A name with no matching lessons/<name>.md shows as "coming soon".
+sections:
+  - title: Core Concepts
+    lessons: [mvcc-bloat, transactional-ddl]
+  - title: Modern SQL
+    lessons: [window-functions, recursive-queries, merge, on-conflict-do-select, generated-columns, uuid, materialized-views]
+  - title: Documents and Search
+    lessons: [jsonb, json-table, full-text-search]
+  - title: Indexes and Performance
+    lessons: [index-toolbox, skip-scan, async-io, pg-stat-statements, plan-advice, hypopg]
+  - title: Queues and Events
+    lessons: [skip-locked, listen-notify, advisory-locks, river]
+  - title: Security and Testing
+    lessons: [row-level-security, pgaudit, pgtap]
+  - title: Data at Scale
+    lessons: [partitioning, pg-partman, pg-ivm, hll]
+  - title: Keeping It Healthy
+    lessons: [pg-activity, repack, pg-repack, pg-squeeze, autovacuum]
+  - title: Beyond Tables
+    lessons: [pgvector, postgis, pgrouting, foreign-data-wrappers, postgrest]
+  - title: Server-Wide
+    server_wide: true
+    lessons: [logical-replication, incremental-backup, pg-cron, pgbouncer]

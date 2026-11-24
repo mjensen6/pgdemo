@@ -1,29 +1,38 @@
-# Throwaway playground: trust auth, no published ports, no saved data.
+# A learning playground: trust auth and no published ports. Don't copy
+# this to production.
+name: pgdemo
 services:
   db:
     build: .
+    image: pgdemo:latest
+    # A tiny init reaps stray processes, so a lesson script can never look
+    # like a crash to the postmaster.
+    init: true
     environment:
       POSTGRES_HOST_AUTH_METHOD: trust
       PGUSER: postgres
     command:
       - postgres
       - -c
-      - shared_preload_libraries=pg_stat_statements,pg_cron,pg_squeeze
+      - shared_preload_libraries=pg_stat_statements,pg_cron,pg_squeeze,pgaudit
       - -c
       - cron.database_name=postgres
-      - -c
-      - summarize_wal=on
       - -c
       - cron.use_background_workers=on
       - -c
       - max_worker_processes=32
       - -c
+      - summarize_wal=on
+      - -c
       - output_plugin_libraries=pgoutput,test_decoding,pg_squeeze
     volumes:
-      - .:/demo:ro
-    tmpfs:
-      - /var/lib/postgresql
+      # The whole server lives here, so playgrounds and progress survive restarts.
+      - pgdata:/var/lib/postgresql
+      # Lessons come from the checkout, so editing one needs no rebuild.
+      - ./lessons:/opt/pgdemo/lessons:ro
     healthcheck:
       test: pg_isready -U postgres
       interval: 1s
-      retries: 30
+      retries: 60
+volumes:
+  pgdata:

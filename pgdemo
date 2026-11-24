@@ -1,0 +1,190 @@
+#!/usr/bin/env bash
+# pgdemo: learn modern PostgreSQL in one-minute lessons.
+#
+# This launcher only deals with your computer and Docker. Everything else
+# (lessons, progress, the screen layout) runs inside the course container.
+# Run `pgdemo help` for every command.
+set -euo pipefail
+
+self=$(readlink -f "${BASH_SOURCE[0]}")
+root=$(dirname "$self")
+cd "$root"
+state=$root/.pgdemo
+mkdir -p "$state"
+
+say()  { printf '%s\n' "$*"; }
+warn() { printf '\033[33m%s\033[0m\n' "$*" >&2; }
+die()  { printf '\033[31m%s\033[0m\n' "$*" >&2; exit 1; }
+ask()  { # ask "Question?" default(y|n)
+  local reply prompt='[y/N]'; [[ $2 == y ]] && prompt='[Y/n]'
+  [[ -t 0 ]] || return 1   # never act on a default without a person to ask
+  read -r -p "$1 $prompt " reply || true
+  reply=${reply:-$2}; [[ $reply == [yY]* ]]
+}
+
+# --- Docker -----------------------------------------------------------------
+
+use_sg=
+docker_() {
+  if [[ -n $use_sg ]]; then sg docker -c "$(printf '%q ' docker "$@")"
+  else docker "$@"; fi
+}
+compose() { docker_ compose "$@"; }
+
+install_hint() {
+  case $(uname -s) in
+    Darwin) say "brew install --cask docker   (then open Docker from Applications)" ;;
+    Linux)  say "curl -fsSL https://get.docker.com | sh" ;;
+    *)      say "See https://docs.docker.com/get-docker/" ;;
+  esac
+}
+
+check_docker() {
+  if ! command -v docker >/dev/null; then
+    say "pgdemo runs everything inside Docker, and Docker isn't installed yet."
+    say "The install command for your system is:"
+    say ""
+    say "  $(install_hint)"
+    say ""
+    if [[ $(uname -s) == Linux ]] && ask "Run it now? It will ask for your password." n; then
+      curl -fsSL https://get.docker.com | sh
+      sudo usermod -aG docker "$USER" || true
+      use_sg=1
+    else
+      die "Install Docker, then run pgdemo again."
+    fi
+  fi
+  docker info >/dev/null 2>&1 && return 0
+
+  # In the docker group, but this shell started before you were added.
+  if id -nG "$USER" 2>/dev/null | tr ' ' '\n' | grep -qx docker \
+     && ! id -nG | tr ' ' '\n' | grep -qx docker \
+     && sg docker -c 'docker info' >/dev/null 2>&1; then
+    use_sg=1
+    warn "This terminal started before your account joined the docker group, so pgdemo is using the group through sg for now. Logging out and back in fixes it for good."
+    return 0
+  fi
+
+  local err; err=$(docker info 2>&1 >/dev/null || true)
+  if [[ $err == *"permission denied"* ]]; then
+    die "Your account can't use Docker yet. Run this, then log out and back in:
+  sudo usermod -aG docker \$USER"
+  fi
+  case $(uname -s) in
+    Darwin) die "Docker is installed but not running. Open Docker from Applications, wait for it to start, then run pgdemo again." ;;
+    *)      die "Docker is installed but not running. Start it with:
+  sudo systemctl start docker" ;;
+  esac
+}
+
+# The image is rebuilt whenever its sources change, for example after git pull.
+source_hash() { cat Dockerfile player/go.mod player/go.sum player/*.go | cksum | cut -d' ' -f1; }
+image_ready() {
+  docker_ image inspect pgdemo:latest >/dev/null 2>&1 \
+    && [[ $(cat "$state/image-hash" 2>/dev/null) == "$(source_hash)" ]]
+}
+
+build_image() {
+  # Phase 5 will pull a prebuilt image here first. Until then, build locally.
+  say "Building the course image. The first time takes a few minutes..."
+  compose build --quiet || die "The build failed. The messages above say why."
+  source_hash > "$state/image-hash"
+  compose up -d --wait >/dev/null 2>&1 || true   # swap the running container onto the new image
+}
+
+start_db() {
+  local running
+  running=$(compose ps --status running -q db 2>/dev/null || true)
+  [[ -n $running ]] && return 0
+  compose up -d --wait --quiet-pull >/dev/null 2>&1 || compose up -d --wait \
+    || die "The course database didn't start. The messages above say why."
+}
+
+# --- First run --------------------------------------------------------------
+
+path_prompt() {
+  [[ -e $state/path-asked || ! -t 0 ]] && return 0
+  touch "$state/path-asked"
+  command -v pgdemo >/dev/null 2>&1 && return 0
+  say ""
+  if ask "Add pgdemo to your PATH, so you can type pgdemo from any folder?" y; then
+    mkdir -p "$HOME/.local/bin"
+    ln -sf "$self" "$HOME/.local/bin/pgdemo"
+    say "Linked $HOME/.local/bin/pgdemo."
+    case ":$PATH:" in
+      *":$HOME/.local/bin:"*) ;;
+      *) say "Your shell doesn't look in ~/.local/bin yet. Add this line to your shell's startup file:"
+         say '  export PATH="$HOME/.local/bin:$PATH"' ;;
+    esac
+  else
+    say "OK. Run it from this folder with ./pgdemo."
+  fi
+}
+
+intro() {
+  [[ -e $state/intro-shown ]] && return 0
+  touch "$state/intro-shown"
+  [[ -t 0 ]] || return 0
+  cat <<'EOF'
+
+How to read the screen:
+
+  Lesson (left)      What's happening and why. Press Enter to run each step.
+  SQL (top right)    Your own prompt, already connected. Click it to type.
+  Live View          The numbers to watch. They refresh every second.
+
+  Click a pane to switch to it. The tabs at the bottom open Browse and Top.
+  Press ? in the Lesson pane for every key, and q to quit.
+
+EOF
+  read -r -p "Press Enter to start. " _ || true
+}
+
+setup() {
+  check_docker
+  image_ready || build_image
+  start_db
+  path_prompt
+}
+
+# --- Forward to the player --------------------------------------------------
+
+player() {
+  local tty=(-T)
+  [[ -t 0 && -t 1 ]] && tty=(-it)
+  local rc=0
+  compose exec "${tty[@]}" -u postgres -e TERM="${TERM:-xterm-256color}" \
+    -e PGDEMO_LESSONS=/opt/pgdemo/lessons db pgdemo-player "$@" || rc=$?
+  if [[ $rc == 10 ]]; then   # q in the Lesson pane: stop and say how to resume
+    compose stop >/dev/null 2>&1
+    say "The database is stopped. Run pgdemo to pick up where you left off."
+    return 0
+  fi
+  return "$rc"
+}
+
+case ${1:-} in
+  setup)
+    setup
+    say "Everything's ready. Run pgdemo to start."
+    ;;
+  stop)
+    check_docker
+    compose stop
+    say "The database is stopped. Run pgdemo to pick up where you left off."
+    ;;
+  help|-h|--help)
+    check_docker; image_ready && start_db && player help || sed -n '2,6p' "$self"
+    ;;
+  "")
+    setup
+    intro
+    player
+    ;;
+  *)
+    check_docker
+    image_ready || setup
+    start_db
+    player "$@"
+    ;;
+esac

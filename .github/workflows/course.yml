@@ -1,0 +1,16 @@
+name: course
+on: [push, pull_request]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: player/go.mod
+      - name: Unit tests
+        run: cd player && go test ./...
+      - name: README lesson list is up to date
+        run: ./scripts/readme --check
+      - name: Course test
+        run: ./tests/course.sh

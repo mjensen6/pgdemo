@@ -345,6 +345,8 @@ output_plugin_libraries=pgoutput,test_decoding,pg_squeeze
 - **No error does not mean a lesson works.** Read the real output of each lesson. Lesson 26's old version passed with zero job runs.
 - **Exclusion constraint error** in `index-toolbox` is intentional.
 - **`REPACK (CONCURRENTLY)`** requires a primary key and cannot run inside a transaction block.
+- **Stray processes crash the server.** Postgres treats an unknown child that dies by signal as a crash and restarts. Without an init process, any orphan in the container is handed to the postmaster. `compose.yaml` sets `init: true`, and `sh` steps that start a background job must `kill` it and `wait` for it.
+- **A check must fail on a fresh playground.** Lesson 1's original size check passed before any step ran. The course test now requires every check to fail on a fresh playground and before the solution, and to pass after it.
 
 ## Verify these before relying on them
 
@@ -358,6 +360,8 @@ These come from project docs or memory and have not been run here:
 - The nested tmux case handles mouse and keys when the learner is already in tmux.
 
 If one fails, choose the simplest substitute that keeps the experience the same, and tell the owner.
+
+Phase 1 result: all of the above were verified on `postgres:19` (19.0, Debian trixie) except lazysql, which arrives with `browse` in Phase 2. pgcli 4.3.0, pspg 5.9.1, pg_activity 3.6.2, and all 14 extensions load together. After a second update, `REPACK t` takes table `t` from 934 kB to 459 kB. Nested tmux passes mouse clicks for panes and tabs.
 
 ## Testing
 

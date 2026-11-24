@@ -1,59 +1,151 @@
-# postgres-demo
+# pgdemo
 
-The best of modern Postgres in 27 tiny, runnable lessons. Each one takes about a minute: run it, read the output, move on.
+Learn modern PostgreSQL 19 in your terminal, one minute at a time. Each lesson runs a few real commands, shows you what changed, and ends with a small challenge you solve yourself.
 
-Everything runs on **PostgreSQL 19** in a throwaway container. All you need is Docker.
+All you need is Docker. Everything else, including Postgres, runs inside the course's own container and never touches anything already on your machine.
 
 ## Start
 
 ```bash
-./demo        # run the next lesson (repeat until done)
+git clone <this repo> pgdemo
+cd pgdemo
+./pgdemo
 ```
 
-| Command | What it does |
-|---|---|
-| `./demo` | Run the next lesson |
-| `./demo 17` | Run lesson 17 |
-| `./demo list` | Show lessons and progress |
-| `./demo all` | Run the whole course |
-| `./demo psql` | Open a SQL prompt to experiment |
-| `./demo down` | Remove the container and all its data |
+The first run checks Docker, builds the course (a few minutes, once), and opens lesson 1. Run `./pgdemo` again any time to pick up where you left off.
 
-Each lesson gets a fresh database, so you can rerun them in any order. To change one, edit its file in `lessons/` and run it again.
+Tested on Linux. If you try it on macOS or anywhere else, please open an issue and say how it went.
+
+## The screen
+
+```
+┌─ Lesson 1: MVCC and bloat ─┬─ SQL ─────────────────────┐
+│ An UPDATE leaves the old   │ lesson=# \dt              │
+│ row behind as a dead row.  │                           │
+│                            ├─ Live View ───────────────┤
+│ UPDATE t SET note = ...    │ size   | rows  | dead     │
+│                            │ 912 kB | 10000 | 10000    │
+│ Enter next  b back  c check  h hint  s skip            │
+│ n next lesson  ? help  q quit                          │
+└────────────────────────────┴───────────────────────────┘
+ Lesson | Browse | Top
+```
+
+- **Lesson**: what is happening and why. Press Enter to run each step.
+- **SQL**: your own prompt, already connected to the lesson's playground. Click it to type.
+- **Live View**: the numbers the lesson wants you to watch, refreshed every second.
+
+Click to switch panes and tabs. Press `?` for every key. Each lesson has its own playground database, so break whatever you like. `pgdemo 1 reset` rebuilds it.
+
+## Commands
+
+```
+pgdemo                  Start, or resume where you left off
+pgdemo list             All lessons by Section, with progress
+pgdemo 5                Open lesson 5 (a name works too: pgdemo repack)
+pgdemo 5 tldr           What it is and why it matters. Runs nothing
+pgdemo 5 info           The full written lesson. Runs nothing
+pgdemo 5 run            Run every step non-stop
+pgdemo 5 reset          Wipe the playground and return to step 1
+pgdemo 5 check          Verify the lesson was completed
+pgdemo 5 hint           Hint for the challenge
+pgdemo 5 solution       Show the answer
+pgdemo check            Re-verify every lesson you have opened
+pgdemo psql             Open plain psql
+pgdemo stop             Stop the database
+pgdemo help             All commands
+```
+
+Your progress is in the `progress` table of the `pgdemo` database, so you can query it with SQL.
 
 ## Lessons
 
-| # | Lesson | Type |
-|---|---|---|
-| 01 | [MVCC and bloat: why updates leave dead rows behind](lessons/01-mvcc-bloat.sql) | Built in |
-| 02 | [Transactional DDL: undo a schema change](lessons/02-transactional-ddl.sql) | Built in |
-| 03 | [SKIP LOCKED: a job queue with no extra software](lessons/03-skip-locked.sh) | Built in |
-| 04 | [pg_stat_statements: find your slowest queries](lessons/04-pg-stat-statements.sql) | Built in |
-| 05 | [JSONB: documents inside a relational database](lessons/05-jsonb.sql) | Built in |
-| 06 | [JSON_TABLE (PG17): turn JSON into rows and columns](lessons/06-json-table.sql) | Built in |
-| 07 | [Full-text search: built in since 8.3](lessons/07-full-text-search.sql) | Built in |
-| 08 | [UUIDs: random v4 and time-ordered v7 (PG18)](lessons/08-uuid.sql) | Built in |
-| 09 | [Generated columns: virtual by default (PG18)](lessons/09-generated-columns.sql) | Built in |
-| 10 | [Index toolbox: partial, expression, BRIN, trigram, exclusion](lessons/10-index-toolbox.sql) | Built in |
-| 11 | [Skip scan (PG18): use an index without its first column](lessons/11-skip-scan.sql) | Built in |
-| 12 | [MERGE (PG15): insert, update, and delete in one statement](lessons/12-merge.sql) | Built in |
-| 13 | [ON CONFLICT DO SELECT (PG19): get or create in one query](lessons/13-on-conflict-do-select.sql) | Built in |
-| 14 | [Partitioning: split one big table into pieces](lessons/14-partitioning.sql) | Built in |
-| 15 | [pg_partman: create future partitions automatically](lessons/15-pg-partman.sql) | Add-on |
-| 16 | [Async I/O (PG18): read ahead instead of one page at a time](lessons/16-async-io.sql) | Built in |
-| 17 | [REPACK (PG19): shrink a table while it stays online](lessons/17-repack.sh) | Built in |
-| 18 | [pg_repack: the classic extension for older versions](lessons/18-pg-repack.sh) | Add-on |
-| 19 | [pg_squeeze: the extension REPACK grew out of](lessons/19-pg-squeeze.sh) | Add-on |
-| 20 | [Autovacuum insight (PG19): see what it will clean next](lessons/20-autovacuum.sql) | Built in |
-| 21 | [Logical replication: copy live changes, now with sequences (PG19)](lessons/21-logical-replication.sh) | Built in |
-| 22 | [Incremental backup (PG17): back up only what changed](lessons/22-incremental-backup.sh) | Built in |
-| 23 | [pg_plan_advice (PG19): steer the query planner](lessons/23-plan-advice.sql) | Built in |
-| 24 | [pgvector: similarity search for AI apps](lessons/24-pgvector.sql) | Add-on |
-| 25 | [PostGIS: maps and distance in SQL](lessons/25-postgis.sql) | Add-on |
-| 26 | [pg_cron: scheduled jobs inside the database](lessons/26-pg-cron.sh) | Add-on |
-| 27 | [PgBouncer: many clients, few real connections](lessons/27-pgbouncer.sh) | Add-on |
+<!-- lessons:start (generated from lessons/course.yaml) -->
 
-"Built in" features ship with Postgres, including its bundled contrib modules. "Add-on" means a separate project, installed for you by the `Dockerfile`.
+**1. Core Concepts**
+
+1. [MVCC and bloat](lessons/mvcc-bloat.md): Updates leave dead rows behind. VACUUM reuses the space but rarely shrinks the file.
+2. [Transactional DDL](lessons/transactional-ddl.md): Schema changes can be rolled back like any other change, so a failed migration leaves nothing half done.
+
+**2. Modern SQL**
+
+3. `window-functions` _(coming soon)_
+4. `recursive-queries` _(coming soon)_
+5. `merge` _(coming soon)_
+6. `on-conflict-do-select` _(coming soon)_
+7. `generated-columns` _(coming soon)_
+8. `uuid` _(coming soon)_
+9. `materialized-views` _(coming soon)_
+
+**3. Documents and Search**
+
+10. `jsonb` _(coming soon)_
+11. `json-table` _(coming soon)_
+12. `full-text-search` _(coming soon)_
+
+**4. Indexes and Performance**
+
+13. `index-toolbox` _(coming soon)_
+14. `skip-scan` _(coming soon)_
+15. `async-io` _(coming soon)_
+16. `pg-stat-statements` _(coming soon)_
+17. `plan-advice` _(coming soon)_
+18. `hypopg` _(coming soon)_
+
+**5. Queues and Events**
+
+19. `skip-locked` _(coming soon)_
+20. `listen-notify` _(coming soon)_
+21. `advisory-locks` _(coming soon)_
+22. `river` _(coming soon)_
+
+**6. Security and Testing**
+
+23. `row-level-security` _(coming soon)_
+24. `pgaudit` _(coming soon)_
+25. `pgtap` _(coming soon)_
+
+**7. Data at Scale**
+
+26. `partitioning` _(coming soon)_
+27. `pg-partman` _(coming soon)_
+28. `pg-ivm` _(coming soon)_
+29. `hll` _(coming soon)_
+
+**8. Keeping It Healthy**
+
+30. `pg-activity` _(coming soon)_
+31. [REPACK, new in Postgres 19](lessons/repack.md): REPACK rebuilds a bloated table to its real size. With CONCURRENTLY, the app keeps writing while it runs.
+32. `pg-repack` _(coming soon)_
+33. `pg-squeeze` _(coming soon)_
+34. `autovacuum` _(coming soon)_
+
+**9. Beyond Tables**
+
+35. `pgvector` _(coming soon)_
+36. `postgis` _(coming soon)_
+37. `pgrouting` _(coming soon)_
+38. `foreign-data-wrappers` _(coming soon)_
+39. `postgrest` _(coming soon)_
+
+**10. Server-Wide** (shares the whole server)
+
+40. `logical-replication` _(coming soon)_
+41. `incremental-backup` _(coming soon)_
+42. `pg-cron` _(coming soon)_
+43. `pgbouncer` _(coming soon)_
+
+<!-- lessons:end -->
+
+## Writing a lesson
+
+Each lesson is one Markdown file, `lessons/<name>.md`, and `lessons/course.yaml` sets the order. See [`lessons/mvcc-bloat.md`](lessons/mvcc-bloat.md) for the format and [`docs/BUILD-SPEC.md`](docs/BUILD-SPEC.md) for the full design. Lessons are read from your checkout, so edits show up without a rebuild.
+
+```bash
+./tests/course.sh -v    # play every lesson and require its check to pass
+./tests/phase1.sh       # drive the real interface through tmux
+./scripts/readme        # regenerate the lesson list above
+```
 
 ## Not included
 
@@ -62,7 +154,7 @@ Each lesson gets a fresh database, so you can rerun them in any order. To change
 
 ## Safety
 
-This is a learning playground. It uses passwordless local auth, publishes no ports, and keeps data in memory. Don't copy `compose.yaml` to production.
+This is a learning playground. It uses passwordless local auth and publishes no ports. Don't copy `compose.yaml` to production.
 
 ## License
 
