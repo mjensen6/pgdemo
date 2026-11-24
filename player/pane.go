@@ -10,8 +10,10 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-// The Lesson pane. Positions: -1 is the intro, 0..n-1 are steps, and n is
-// the challenge.
+// The Lesson pane. Positions: -2 is the Course Overview (first lesson
+// only), -1 is the lesson intro, 0..n-1 are steps, and n is the challenge.
+
+const posOverview = -2
 
 var (
 	headStyle = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("6"))
@@ -84,7 +86,7 @@ func (m *model) load(e *Entry) error {
 	m.ran = min(max(getProgress(e.Name).Step-1, 0), n)
 	switch {
 	case m.ran == 0:
-		m.pos = -1
+		m.pos = m.start()
 	case m.ran == n:
 		m.pos = n
 	default:
@@ -94,6 +96,15 @@ func (m *model) load(e *Entry) error {
 }
 
 func (m *model) Init() tea.Cmd { return nil }
+
+// start is the first page of the lesson: the Course Overview for the first
+// lesson of the course, otherwise the lesson intro.
+func (m *model) start() int {
+	if m.course.Overview != "" && m.entry == m.course.First() {
+		return posOverview
+	}
+	return -1
+}
 
 func (m *model) steps() []Step { return m.entry.Lesson.Steps }
 
@@ -209,7 +220,7 @@ func (m *model) key(k tea.KeyMsg) (tea.Model, tea.Cmd) {
 		}
 		return m, m.run(next)
 	case "b":
-		if m.pos > -1 {
+		if m.pos > m.start() {
 			m.pos--
 		}
 		m.msg = ""
@@ -318,6 +329,8 @@ func (m *model) body() string {
 	}
 	var b strings.Builder
 	switch {
+	case m.pos == posOverview:
+		b.WriteString(m.render(m.course.Overview))
 	case m.pos == -1:
 		md := fmt.Sprintf("# %s\n\n%s\n\n", l.Title, l.TLDR)
 		if e.Section.ServerWide {
@@ -369,6 +382,9 @@ func (m *model) View() string {
 		where = "Challenge"
 	}
 	head := headStyle.Render(fmt.Sprintf(" Section %d · %s", e.SectionNum, e.Section.Title)) + dimStyle.Render("  "+where)
+	if m.pos == posOverview {
+		head = headStyle.Render(" Course Overview")
+	}
 	if p := getProgressCached(e.Name); p == "done" {
 		head += okStyle.Render("  ● done")
 	}

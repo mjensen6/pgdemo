@@ -28,6 +28,18 @@ _Avoid_: Quiz, test, exercise
 The database belonging to a single lesson, which the learner is free to break.
 _Avoid_: Sandbox, lesson database
 
+**Course Overview**:
+The first page of the first lesson, describing the screen before any lesson starts.
+_Avoid_: Welcome screen, intro, tutorial
+
+**Lesson Pane**:
+The left pane, which explains each step and runs it when the learner presses Enter.
+_Avoid_: Main pane, guide
+
+**SQL Pane**:
+The learner's own prompt, connected to the current lesson's playground.
+_Avoid_: Console, terminal, shell
+
 **Live View**:
 A continuously refreshing display of the numbers a lesson wants the learner to watch.
 _Avoid_: Monitor, dashboard

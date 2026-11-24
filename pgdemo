@@ -121,25 +121,6 @@ path_prompt() {
   fi
 }
 
-intro() {
-  [[ -e $state/intro-shown ]] && return 0
-  touch "$state/intro-shown"
-  [[ -t 0 ]] || return 0
-  cat <<'EOF'
-
-How to read the screen:
-
-  Lesson (left)      What's happening and why. Press Enter to run each step.
-  SQL (top right)    Your own prompt, already connected. Click it to type.
-  Live View          The numbers to watch. They refresh every second.
-
-  Click a pane to switch to it. The tabs at the bottom open Browse and Top.
-  Press ? in the Lesson pane for every key, and q to quit.
-
-EOF
-  read -r -p "Press Enter to start. " _ || true
-}
-
 setup() {
   check_docker
   image_ready || build_image
@@ -178,7 +159,6 @@ case ${1:-} in
     ;;
   "")
     setup
-    intro
     player
     ;;
   *)

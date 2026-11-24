@@ -46,9 +46,13 @@ rm -rf .pgdemo && mkdir -p .pgdemo && touch .pgdemo/path-asked  # leave the test
 
 # 1. Builds, starts, and opens lesson 1 in three panes with no manual steps.
 launch
-wait_for "Press Enter to start." 900
+wait_for "Course Overview" 900
+wait_for "Lesson pane"
+key b; sleep 0.5; screen | grep -qF "Course Overview" || fail "b went back past the Course Overview"
 key Enter
 wait_for "Press Enter to run step 1." 120
+key b; wait_for "Course Overview"
+key Enter; wait_for "Press Enter to run step 1."
 wait_for "lesson_mvcc_bloat=#"
 wait_for "Live View"
 ok "1. pgdemo opens lesson 1 in three panes"

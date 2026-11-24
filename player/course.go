@@ -32,6 +32,7 @@ type Entry struct {
 type Course struct {
 	Sections []*Section `yaml:"sections"`
 	Entries  []*Entry   `yaml:"-"`
+	Overview string     `yaml:"-"` // lessons/overview.md, shown before the first lesson
 }
 
 var lessonName = regexp.MustCompile(`^[a-z0-9]+(-[a-z0-9]+)*$`)
@@ -46,6 +47,9 @@ func loadCourse(dir string) (*Course, error) {
 	var c Course
 	if err := yaml.Unmarshal(src, &c); err != nil {
 		return nil, fmt.Errorf("course.yaml: %w", err)
+	}
+	if md, err := os.ReadFile(filepath.Join(dir, "overview.md")); err == nil {
+		c.Overview = string(md)
 	}
 	seen := map[string]bool{}
 	for si, s := range c.Sections {

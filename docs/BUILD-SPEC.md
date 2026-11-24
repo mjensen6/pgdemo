@@ -54,7 +54,7 @@ Plain `pgdemo` runs `setup` automatically when needed, so a newcomer never has t
 3. Handle a stale Docker group. If the account is in the `docker` group but the current shell is not, run Docker through `sg docker -c ...` and explain in one plain sentence. This really happened: long-lived desktop and tmux sessions keep their old groups even after being added.
 4. Pull the prebuilt image, falling back to a local build if the pull fails. Until Phase 5, always build locally.
 5. Ask once whether to add `pgdemo` to PATH, by linking it into `~/.local/bin`. Never change PATH silently.
-6. Show a short "how to read this screen" intro, then open the first lesson.
+6. Open the first lesson on its **Course Overview** page, which explains the Lesson pane, SQL pane, Live View, and tabs inside the real screen. Its text lives in `lessons/overview.md`.
 
 ## Screen layout
 
