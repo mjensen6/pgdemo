@@ -1,4 +1,4 @@
-# postgres-demo
+# pgdemo
 
 A terminal-based course that teaches modern PostgreSQL through short, runnable lessons.
 
@@ -35,3 +35,19 @@ _Avoid_: Monitor, dashboard
 **Check**:
 A verification of a playground's current state that confirms a lesson or challenge was completed.
 _Avoid_: Test, grade, validation
+
+**Progress**:
+A learner's state for each lesson: not started, watched, or done.
+_Avoid_: Score, completion
+
+**Watched**:
+A lesson whose steps have run but whose check has not passed.
+_Avoid_: Viewed, partial
+
+**Done**:
+A lesson whose check has passed.
+_Avoid_: Complete, finished
+
+**Server-Wide Lesson**:
+A lesson whose effects reach beyond its playground to the whole server.
+_Avoid_: Global lesson, shared lesson
