@@ -8,9 +8,9 @@ A terminal-based course that teaches modern PostgreSQL through short, runnable l
 The complete set of lessons.
 _Avoid_: Demo, tutorial
 
-**Part**:
+**Section**:
 A themed group of lessons within the course.
-_Avoid_: Module, section, chapter
+_Avoid_: Part, module, chapter
 
 **Lesson**:
 One topic, taking about a minute to work through.
@@ -27,6 +27,10 @@ _Avoid_: Quiz, test, exercise
 **Playground**:
 The database belonging to a single lesson, which the learner is free to break.
 _Avoid_: Sandbox, lesson database
+
+**Live View**:
+A continuously refreshing display of the numbers a lesson wants the learner to watch.
+_Avoid_: Monitor, dashboard
 
 **Check**:
 A verification of a playground's current state that confirms a lesson or challenge was completed.
