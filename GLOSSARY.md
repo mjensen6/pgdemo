@@ -25,5 +25,9 @@ The small task a learner types themselves at the end of a lesson.
 _Avoid_: Quiz, test, exercise
 
 **Playground**:
-The fresh database a lesson runs in, which the learner is free to break.
+The database belonging to a single lesson, which the learner is free to break.
 _Avoid_: Sandbox, lesson database
+
+**Check**:
+A verification of a playground's current state that confirms a lesson or challenge was completed.
+_Avoid_: Test, grade, validation
