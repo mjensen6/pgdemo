@@ -23,6 +23,8 @@ var (
 			BorderForeground(lipgloss.Color("8")).PaddingLeft(1)
 	okStyle   = lipgloss.NewStyle().Foreground(lipgloss.Color("2")).Bold(true)
 	warnStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("3")).Bold(true)
+	labelRun  = lipgloss.NewStyle().Foreground(lipgloss.Color("3")).Bold(true).PaddingLeft(2)
+	labelRan  = lipgloss.NewStyle().Foreground(lipgloss.Color("2")).Bold(true).PaddingLeft(2)
 )
 
 type model struct {
@@ -36,7 +38,7 @@ type model struct {
 	msg     string
 	hint    bool
 	help    bool
-	confirm bool
+	confirm string // "quit" or "reset" while asking y/n
 	width   int
 	height  int
 	vp      viewport.Model
@@ -56,6 +58,7 @@ type checkDoneMsg struct {
 type lessonMsg struct {
 	entry *Entry
 	err   error
+	what  string // what was being done, for the error message
 }
 
 func newModel(c *Course, e *Entry) (*model, error) {
@@ -81,7 +84,7 @@ func (m *model) load(e *Entry) error {
 	}
 	m.entry, m.sess = e, s
 	m.outputs = map[int]string{}
-	m.msg, m.hint, m.help, m.confirm = "", false, false, false
+	m.msg, m.hint, m.help, m.confirm = "", false, false, ""
 	n := len(e.Lesson.Steps)
 	m.ran = min(max(getProgress(e.Name).Step-1, 0), n)
 	switch {
@@ -90,7 +93,7 @@ func (m *model) load(e *Entry) error {
 	case m.ran == n:
 		m.pos = n
 	default:
-		m.pos = m.ran - 1
+		m.pos = m.ran // resume on the next step, not yet run
 	}
 	return nil
 }
@@ -130,11 +133,9 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.outputs[msg.idx] = out
 		m.ran = msg.idx + 1
 		m.pos = msg.idx
+		m.msg = m.afterRun()
 		if err := markWatched(m.entry.Name, m.ran+1); err != nil {
 			m.msg = warnStyle.Render("Could not save progress: " + err.Error())
-		}
-		if m.ran == len(m.steps()) {
-			m.msg = "That was the last step. Press Enter for the challenge."
 		}
 		m.refresh(false)
 		return m, nil
@@ -159,7 +160,9 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			msg.err = m.load(msg.entry)
 		}
 		if msg.err != nil {
-			m.msg = warnStyle.Render("Could not open the next lesson: ") + msg.err.Error()
+			m.msg = warnStyle.Render("Could not "+msg.what+": ") + msg.err.Error()
+		} else if msg.what == "reset the lesson" {
+			m.msg = okStyle.Render("Reset.") + " The playground is back to how the lesson started."
 		}
 		m.refresh(true)
 		return m, nil
@@ -176,14 +179,18 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m *model) key(k tea.KeyMsg) (tea.Model, tea.Cmd) {
-	if m.confirm {
-		m.confirm = false
+	if m.confirm != "" {
+		what := m.confirm
+		m.confirm = ""
+		m.msg = ""
 		if k.String() == "y" || k.String() == "Y" {
+			if what == "reset" {
+				return m, m.reset()
+			}
 			m.leave()
 			quitSession()
 			return m, tea.Quit
 		}
-		m.msg = ""
 		m.refresh(false)
 		return m, nil
 	}
@@ -198,7 +205,7 @@ func (m *model) key(k tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.vp, cmd = m.vp.Update(k)
 		return m, cmd
 	case "ctrl+c":
-		m.confirm = true
+		m.confirm = "quit"
 		m.refresh(false)
 		return m, nil
 	}
@@ -208,17 +215,18 @@ func (m *model) key(k tea.KeyMsg) (tea.Model, tea.Cmd) {
 	n := len(m.steps())
 	switch k.String() {
 	case "enter":
-		if m.pos == n {
-			return m, m.check()
-		}
-		next := m.pos + 1
 		m.msg = ""
-		if next == n || next < m.ran {
-			m.pos = next
-			m.refresh(true)
-			return m, nil
+		switch {
+		case m.pos == n:
+			return m, m.check()
+		case m.pos >= 0 && m.pos == m.ran && m.steps()[m.pos].Lang != "":
+			return m, m.run(m.pos) // the step on screen has not run yet
+		case m.pos >= 0 && m.pos == m.ran:
+			m.ran++ // a closing note with no command: reading it is enough
+			markWatched(m.entry.Name, m.ran+1)
 		}
-		return m, m.run(next)
+		m.pos++ // show the next page; a step waits for Enter before it runs
+		m.refresh(true)
 	case "b":
 		if m.pos > m.start() {
 			m.pos--
@@ -237,8 +245,11 @@ func (m *model) key(k tea.KeyMsg) (tea.Model, tea.Cmd) {
 	case "?":
 		m.help = true
 		m.refresh(true)
+	case "r":
+		m.confirm = "reset"
+		m.refresh(false)
 	case "q":
-		m.confirm = true
+		m.confirm = "quit"
 		m.refresh(false)
 	}
 	return m, nil
@@ -252,6 +263,33 @@ func (m *model) run(idx int) tea.Cmd {
 	return func() tea.Msg {
 		out, err := runStep(s, step)
 		return stepDoneMsg{idx, out, err}
+	}
+}
+
+// afterRun says what Enter does next, once a step has run.
+func (m *model) afterRun() string {
+	if m.ran == len(m.steps()) {
+		return "That was the last step. Press Enter for the challenge."
+	}
+	return fmt.Sprintf("Press Enter for step %d.", m.ran+1)
+}
+
+// reset rebuilds the playground, reconnects the SQL and Live View panes,
+// and goes back to the start of the lesson.
+func (m *model) reset() tea.Cmd {
+	m.running = true
+	m.msg = "Resetting..."
+	m.refresh(false)
+	if m.sess != nil {
+		m.sess.Close()
+		m.sess = nil
+	}
+	e := m.entry
+	return func() tea.Msg {
+		if err := resetPlayground(e.Lesson); err != nil {
+			return lessonMsg{err: err, what: "reset the lesson"}
+		}
+		return lessonMsg{entry: e, err: switchLesson(e), what: "reset the lesson"}
 	}
 }
 
@@ -286,9 +324,9 @@ func (m *model) nextLesson() tea.Cmd {
 	m.leave()
 	return func() tea.Msg {
 		if err := ensurePlayground(next.Lesson); err != nil {
-			return lessonMsg{err: err}
+			return lessonMsg{err: err, what: "open the next lesson"}
 		}
-		return lessonMsg{entry: next, err: switchLesson(next)}
+		return lessonMsg{entry: next, err: switchLesson(next), what: "open the next lesson"}
 	}
 }
 
@@ -332,31 +370,48 @@ func (m *model) body() string {
 	case m.pos == posOverview:
 		b.WriteString(m.render(m.course.Overview))
 	case m.pos == -1:
-		md := fmt.Sprintf("# %s\n\n%s\n\n", l.Title, l.TLDR)
+		md := fmt.Sprintf("# %s\n\n*%s*\n\n", l.Title, l.TLDR)
 		if e.Section.ServerWide {
 			md += "> This lesson shares the whole server, not just its own playground.\n\n"
 		}
-		md += fmt.Sprintf("This lesson has %d steps and a challenge. Press **Enter** to run step 1.\n\n"+
-			"The **SQL** pane on the right is yours to type in. The **Live View** below it refreshes every second.", n)
+		if l.Intro != "" {
+			md += l.Intro + "\n\n---\n\n"
+		}
+		md += fmt.Sprintf("**Try it:** %d steps, then a challenge. Each step shows its command before it runs. Press **Enter** to see step 1.", n)
 		b.WriteString(m.render(md))
 	case m.pos < n:
 		s := l.Steps[m.pos]
-		md := s.Text
-		if s.Lang != "" {
-			md += fmt.Sprintf("\n\n```%s\n%s\n```", fence(s.Lang), s.Code)
+		b.WriteString(m.render(s.Text))
+		if s.Lang == "" {
+			break
 		}
-		b.WriteString(m.render(md))
-		b.WriteString("\n\n")
+		what := "SQL"
+		if s.Lang == "sh" {
+			what = "shell script"
+		}
+		done := m.pos < m.ran
+		label := labelRun.Render("▶ Press Enter to run this " + what + ":")
+		switch {
+		case m.running:
+			label = labelRun.Render("Running this " + what + ":")
+		case done:
+			label = labelRan.Render("✓ You ran:")
+		}
+		b.WriteString("\n\n" + label + "\n")
+		b.WriteString(m.render(fmt.Sprintf("```%s\n%s\n```", fence(s.Lang), s.Code)))
+		if !done && !m.running {
+			break
+		}
+		b.WriteString("\n\n" + labelRan.Render("Result:") + "\n")
 		switch out, ok := m.outputs[m.pos]; {
 		case m.running:
 			b.WriteString(dimStyle.Render("  Running..."))
-		case s.Lang == "":
-		case !ok && m.pos < m.ran:
-			b.WriteString(dimStyle.Render(fmt.Sprintf("  This step ran on an earlier visit. To start over: pgdemo %d reset", e.Num)))
+		case !ok:
+			b.WriteString(dimStyle.Render("  This step ran on an earlier visit. Press r to reset the lesson and run it again."))
 		case out == "":
 			b.WriteString(dimStyle.Render("  (no output)"))
 		default:
-			b.WriteString(outStyle.Render(out))
+			b.WriteString("  " + strings.ReplaceAll(outStyle.Render(out), "\n", "\n  "))
 		}
 	default:
 		md := "**Your turn.** " + l.Challenge + "\n\nType your answer in the **SQL** pane, then press **Enter** here to check it."
@@ -390,11 +445,18 @@ func (m *model) View() string {
 	}
 
 	k := func(key, label string) string { return keyStyle.Render(key) + " " + label }
-	keys1 := strings.Join([]string{k("Enter", "next"), k("b", "back"), k("c", "check"), k("h", "hint"), k("s", "skip")}, "  ")
+	enter := "next"
+	if m.pos >= 0 && m.pos < n && m.pos == m.ran && l.Steps[m.pos].Lang != "" {
+		enter = "run"
+	}
+	keys1 := strings.Join([]string{k("Enter", enter), k("b", "back"), k("r", "reset"), k("c", "check"), k("h", "hint"), k("s", "skip")}, "  ")
 	keys2 := strings.Join([]string{k("n", "next lesson"), k("?", "help"), k("q", "quit")}, "  ")
 	status := m.msg
-	if m.confirm {
+	switch m.confirm {
+	case "quit":
 		status = warnStyle.Render("Quit and stop the database? y/n")
+	case "reset":
+		status = warnStyle.Render("Reset this lesson? Your work in its playground is wiped. y/n")
 	}
 	return head + "\n" + m.vp.View() + "\n" + truncate(status, m.width) + "\n " + keys1 + "\n " + keys2
 }
@@ -427,12 +489,12 @@ func firstLine(s string) string {
 
 const helpText = "## Keys\n\n" +
 	"| Key | Action |\n|---|---|\n" +
-	"| Enter | Run the next step, or check the challenge when on it |\n" +
-	"| b | Back one step |\n| c | Check |\n| h | Hint |\n| s | Skip the challenge |\n" +
+	"| Enter | Run the step on screen, then move to the next one. On the challenge, check it |\n" +
+	"| b | Back one step |\n| r | Reset the lesson: rebuild its playground and start again |\n| c | Check |\n| h | Hint |\n| s | Skip the challenge |\n" +
 	"| n | Next lesson |\n| ? | This help |\n| q | Quit |\n" +
 	"| ↑ ↓ | Scroll this pane |\n\n" +
 	"Click a pane to type in it. Click **Browse** or **Top** at the bottom to switch tabs.\n\n" +
 	"## Commands\n\nRun these in your terminal when you are not in a lesson:\n\n" +
 	"```\npgdemo list          All lessons, with progress\npgdemo 5             Open lesson 5\n" +
-	"pgdemo 5 info        The full written lesson\npgdemo 5 reset       Rebuild the playground\n" +
+	"pgdemo 5 info        The full written lesson\n" +
 	"pgdemo help          Every command\n```\n\nPress any key to go back."

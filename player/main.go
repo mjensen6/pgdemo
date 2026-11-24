@@ -382,7 +382,6 @@ func readme(root string, checkOnly bool) error {
 	return os.WriteFile(path, next, 0o644)
 }
 
-
 const usage = `pgdemo: learn modern PostgreSQL in one-minute lessons.
 
 Start

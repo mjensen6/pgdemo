@@ -16,6 +16,10 @@ _Avoid_: Part, module, chapter
 One topic, taking about a minute to work through.
 _Avoid_: Demo, exercise
 
+**Intro**:
+The teaching part at the start of a lesson, before its steps. It explains the idea and runs nothing.
+_Avoid_: Overview, preamble
+
 **Step**:
 One explained command inside a lesson.
 _Avoid_: Stage, instruction

@@ -23,6 +23,7 @@ type Lesson struct {
 	Cleanup   string
 	Solution  string
 	Check     string
+	Intro     string // the teaching, before "## Try it"; nothing in it runs
 	Steps     []Step
 	Challenge string
 	Hint      string
@@ -52,6 +53,9 @@ func parseLesson(name string, src []byte) (*Lesson, error) {
 	lines := strings.Split(body, "\n")
 	var prose []string
 	inChallenge := false
+	// With a "## Try it" heading, everything above it is the Intro, and
+	// code blocks there are examples to read, not steps to run.
+	inIntro := strings.Contains(body, "\n## Try it\n") || strings.HasPrefix(body, "## Try it\n")
 	flushNote := func() {
 		if t := strings.TrimSpace(strings.Join(prose, "\n")); t != "" {
 			l.Steps = append(l.Steps, Step{Text: t})
@@ -84,7 +88,7 @@ func parseLesson(name string, src []byte) (*Lesson, error) {
 			case "check":
 				l.Check = code
 			case "sql", "sh":
-				if inChallenge {
+				if inChallenge || inIntro {
 					prose = append(prose, raw...)
 					continue
 				}
@@ -93,6 +97,12 @@ func parseLesson(name string, src []byte) (*Lesson, error) {
 			default:
 				prose = append(prose, raw...)
 			}
+			continue
+		}
+		if inIntro && strings.TrimSpace(line) == "## Try it" {
+			l.Intro = strings.TrimSpace(strings.Join(prose, "\n"))
+			prose = nil
+			inIntro = false
 			continue
 		}
 		if !inChallenge && strings.TrimSpace(line) == "## Challenge" {
@@ -155,9 +165,12 @@ func endsStatement(code string) bool {
 // reader needs, without the hidden setup and check.
 func (l *Lesson) Markdown(e *Entry) string {
 	var b strings.Builder
-	fmt.Fprintf(&b, "# %s\n\n%s\n\n", e.Label(), l.TLDR)
+	fmt.Fprintf(&b, "# %s\n\n*%s*\n\n", e.Label(), l.TLDR)
 	if e.Section.ServerWide {
 		b.WriteString("> This lesson shares the whole server, not just its own playground.\n\n")
+	}
+	if l.Intro != "" {
+		b.WriteString(l.Intro + "\n\n")
 	}
 	for i, s := range l.Steps {
 		fmt.Fprintf(&b, "## Step %d\n\n%s\n\n", i+1, s.Text)

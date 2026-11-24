@@ -1,6 +1,9 @@
 package main
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 func TestCourseLoads(t *testing.T) {
 	c, err := loadCourse("../lessons")
@@ -36,5 +39,19 @@ func TestParseLesson(t *testing.T) {
 	}
 	if _, err := parseLesson("x", []byte("---\ntitle: T\n---\n")); err == nil {
 		t.Fatal("a lesson without a tldr should be rejected")
+	}
+}
+
+func TestIntroBeforeTryIt(t *testing.T) {
+	src := "---\ntitle: T\ntldr: Short.\n---\n\nTeaching here.\n\n```sql\nSELECT 'example only';\n```\n\n## Try it\n\nRun this.\n\n```sql\nSELECT 1;\n```\n\n## Challenge\n\nDo it.\n\nHint: H.\n\n```solution\nSELECT 1;\n```\n\n```check\nSELECT true;\n```\n"
+	l, err := parseLesson("x", []byte(src))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(l.Intro, "Teaching here.") || !strings.Contains(l.Intro, "example only") {
+		t.Fatalf("intro: %q", l.Intro)
+	}
+	if len(l.Steps) != 1 || l.Steps[0].Code != "SELECT 1;" || l.Steps[0].Text != "Run this." {
+		t.Fatalf("an example in the intro must not become a step: %+v", l.Steps)
 	}
 }

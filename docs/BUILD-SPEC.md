@@ -85,8 +85,9 @@ Assume a full-screen, wide terminal. Do not build medium or phone layouts. If th
 
 | Key | Action |
 |---|---|
-| Enter | Run the next step, or check the challenge when on it |
+| Enter | Run the step on screen, then move to the next one. On the challenge, check it |
 | b | Back one step |
+| r | Reset the lesson, after confirmation: rebuild the playground, reconnect the panes, and go back to the start |
 | c | Check |
 | h | Hint |
 | s | Skip the challenge |
@@ -192,7 +193,8 @@ SELECT pg_table_size('t') < 600000;
 |---|---|
 | `setup` | Hidden. Prepares the playground |
 | `view` | The Live View query |
-| Paragraph + `sql` or `sh` | One step |
+| Text before `## Try it` | The Intro: the teaching, including what the Live View shows. Code blocks here are examples and never run |
+| Paragraph + `sql` or `sh` | One step, after `## Try it` |
 | `## Challenge` | The task the learner does themselves |
 | `Hint:` line | Challenge hint |
 | `solution` | The answer |
@@ -201,9 +203,13 @@ SELECT pg_table_size('t') < 600000;
 
 Every lesson needs a `tldr`, a challenge, a hint, a solution, and a check.
 
-### Steps
+### Intro and steps
 
-The player runs each step and shows its output in the Lesson pane. The SQL pane stays the learner's own.
+A lesson teaches first and practices second. The **Intro** explains the idea and what the Live View will show, and runs nothing. The steps after `## Try it` are the hands-on part.
+
+Nothing runs without the learner seeing it first. A step opens with its explanation and the exact command under "Press Enter to run this SQL". Enter runs it, and the pane then shows "You ran" and the result. The next Enter moves on. Each step's text should say what the command does and what to watch for in the Live View.
+
+The player shows each step's output in the Lesson pane. The SQL pane stays the learner's own.
 
 All `sql` steps in a lesson must share **one persistent database session**. Lessons rely on this, for example `BEGIN` in one step and `ROLLBACK` in a later one. Use one long-running `psql` process per lesson so output matches what learners see in real Postgres.
 

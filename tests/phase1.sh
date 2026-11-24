@@ -50,21 +50,28 @@ wait_for "Course Overview" 900
 wait_for "Lesson pane"
 key b; sleep 0.5; screen | grep -qF "Course Overview" || fail "b went back past the Course Overview"
 key Enter
-wait_for "Press Enter to run step 1." 120
+wait_for "Press Enter to see step 1." 120
+wait_for "consistent snapshot."   # the intro teaches before anything runs
 key b; wait_for "Course Overview"
-key Enter; wait_for "Press Enter to run step 1."
+key Enter; wait_for "Press Enter to see step 1."
 wait_for "lesson_mvcc_bloat=#"
 wait_for "Live View"
 ok "1. pgdemo opens lesson 1 in three panes"
 
-# 2. Enter steps through, and the Live View numbers change.
-key Enter
-wait_for "UPDATE 10000"
+# 2. Enter steps through, and the Live View numbers change. Each step
+# shows its SQL first, and only the next Enter runs it.
+key Enter; wait_for "Press Enter to run this SQL:"
+sleep 1.5; screen | grep -qF "│ 10000 │    0 │" || fail "a step ran before Enter was pressed"
+key Enter; wait_for "UPDATE 10000"
+wait_for "✓ You ran:"
 wait_for "│ 10000 │ 10000 │"
-ok "2. Enter runs a step and the Live View shows the dead rows"
+ok "2. a step shows its SQL, Enter runs it, and the Live View shows the dead rows"
 
 # 3 and 4. The SQL pane is connected; c fails, then passes after solving.
+key Enter; wait_for "Press Enter to run this SQL:"
 key Enter; wait_for "VACUUM"
+key Enter; wait_for "UPDATE t SET note = 'again'"
+key Enter; wait_for "That was the last step."
 key Enter; wait_for "Your turn."
 key c; wait_for "Not yet."
 type_sql "REPACK t;"
@@ -92,23 +99,37 @@ wait_for "Lesson 2: Transactional DDL" 120
 ok "8. q stops and resumes, keeping progress and the playground"
 
 # 5. One session across steps, so ROLLBACK works.
+key Enter; wait_for "Press Enter to run this SQL:"
 key Enter; wait_for "ALTER TABLE"
+key Enter; wait_for "ROLLBACK;"
 key Enter; wait_for "1 | Ada"
 quit
 ok "5. pgdemo 2 keeps one session, so ROLLBACK brings the column back"
 
 # 6. REPACK shows the rebuild while the background writer keeps landing writes.
 launch repack
-wait_for "Press Enter to run step 1." 120
-key Enter; wait_for "27 MB | 20000"
+wait_for "Press Enter to see step 1." 120
+key Enter; key Enter; wait_for "27 MB | 20000"
+key Enter; wait_for "Press Enter to run this shell script:"
 key Enter; wait_for "REPACK" 60
-writes() { screen | sed -n 's/^│ writes so far: \([0-9][0-9]*\).*/\1/p'; }  # output lines only
+writes() { screen | sed -n 's/^ *│ writes so far: \([0-9][0-9]*\).*/\1/p'; }  # output lines only
 for _ in {1..120}; do [[ $(writes | wc -l) == 2 ]] && break; sleep 0.25; done
 before=$(writes | head -1); stopped=$(writes | tail -1)
 [[ -n $before ]] || fail "the repack step printed no write counts"
 (( stopped > before )) || fail "writes did not keep landing ($before then $stopped)"
-quit
 ok "6. pgdemo repack rebuilds while writes land ($before, then $stopped)"
+
+# r resets without leaving: the playground is rebuilt and the panes reconnect.
+key Enter; key Enter; wait_for "That was the last step."
+size() { docker compose exec -T -u postgres db psql -X -At -d lesson_repack -c "SELECT pg_table_size('t')"; }
+(( $(size) < 10000000 )) || fail "REPACK did not shrink the table"
+key r; wait_for "Reset this lesson?"
+key y; wait_for "Reset." 60
+wait_for "Press Enter to see step 1."
+wait_for "lesson_repack=#"
+(( $(size) > 20000000 )) || fail "r did not rebuild the playground"
+quit
+ok "r resets the lesson in place and returns to its start"
 
 # 7. tldr, info, reset, hint, and solution.
 ./pgdemo 1 tldr     | grep -qF "Updates leave dead rows behind" || fail "tldr"
