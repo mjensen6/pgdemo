@@ -13,7 +13,8 @@ func TestCourseLoads(t *testing.T) {
 	if len(c.Entries) != 43 {
 		t.Fatalf("want 43 lessons, got %d", len(c.Entries))
 	}
-	want := map[string]int{"mvcc-bloat": 1, "transactional-ddl": 2, "repack": 31}
+	want := map[string]int{"mvcc-bloat": 1, "transactional-ddl": 2, "merge": 5, "jsonb": 10,
+		"skip-locked": 19, "partitioning": 26, "repack": 31, "postgis": 36, "pgbouncer": 43}
 	for name, num := range want {
 		e := c.ByName(name)
 		if e == nil || e.Num != num || e.Lesson == nil {
@@ -67,8 +68,8 @@ func TestPrevSkipsComingSoon(t *testing.T) {
 	if p := c.Prev(c.ByName("transactional-ddl")); p == nil || p.Name != "mvcc-bloat" {
 		t.Fatalf("Prev(transactional-ddl) = %v, want mvcc-bloat", p)
 	}
-	// repack sits after many coming-soon lessons; Prev must skip them.
-	if p := c.Prev(c.ByName("repack")); p == nil || p.Name != "transactional-ddl" {
-		t.Fatalf("Prev(repack) = %v, want transactional-ddl", p)
+	// pg-ivm, hll, and pg-activity (28-30) are coming soon; Prev must skip them.
+	if p := c.Prev(c.ByName("repack")); p == nil || p.Name != "pg-partman" {
+		t.Fatalf("Prev(repack) = %v, want pg-partman", p)
 	}
 }

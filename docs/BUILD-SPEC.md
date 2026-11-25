@@ -10,9 +10,9 @@ The bar for every decision is: **would this be obvious to someone who did not bu
 
 ## Current state
 
-- **Phases 1 and 2 are built.** `./pgdemo`, the Go player, the three-pane screen, progress, and every command in [Commands](#commands) work.
-- **3 of 43 lessons are built** in the new format: `mvcc-bloat`, `transactional-ddl`, and `repack`. The other 40 show as "coming soon".
-- The original 27-lesson course, run by the old `./demo`, is kept in `legacy/` as the source for Phase 3. `01-mvcc-bloat`, `02-transactional-ddl`, and `17-repack` have been converted and removed from it, leaving 24 to convert.
+- **Phases 1, 2, and 3 are built.** `./pgdemo`, the Go player, the three-pane screen, progress, and every command in [Commands](#commands) work.
+- **27 of 43 lessons are built**: every lesson from the original course, converted to the new format. The 16 new lessons for Phase 4 show as "coming soon".
+- The original 27-lesson course, run by the old `./demo`, is on `main`. Its scripts were the source for Phase 3 and have been removed from this branch.
 - `tests/course.sh`, `tests/phase1.sh`, and `tests/phase2.sh` pass on PostgreSQL 19.0.
 - Work happens on branch `design/approachable-cli`. The repo has no remote.
 - `main` holds the original course. Do not merge, push, or publish without the owner's approval.
@@ -24,7 +24,7 @@ Stop at the end of each phase and hand it to the owner. Do not begin the next ph
 
 1. **Slice.** _Done._ `./pgdemo`, the three-pane layout, the player, progress, and these 3 lessons: `mvcc-bloat`, `transactional-ddl`, `repack`. All 43 lessons appear in `pgdemo list`, and unbuilt ones show as "coming soon".
 2. **Tools.** _Done._ All remaining commands, help, `doctor`, `browse`, `top`, and `connect`.
-3. **Convert** the remaining 24 existing lessons to the new format.
+3. **Convert** _Done._ The remaining 24 existing lessons to the new format.
 4. **Add** the 16 new lessons.
 5. **Publish** to GitHub only after the owner's final approval. This includes the prebuilt image, CI going live, renaming the folder to `pgdemo`, and replacing the placeholder commit author.
 
@@ -238,7 +238,7 @@ Replication, scheduled jobs, and server settings belong to the whole server, so 
 
 ### Course order
 
-Sources marked with a file name are in `legacy/lessons/`.
+Sources marked with a file name were scripts in the original course, on `main`.
 
 | # | Section | Lesson name | Source |
 |---|---|---|---|
@@ -410,7 +410,7 @@ Then stop, tell the owner how to try it, and wait for feedback.
 `tests/phase2.sh` checks each of these:
 
 1. `pgdemo help` lists every command above, and `pgdemo help check` explains one with an example. No command says it "arrives in the next build".
-2. `pgdemo section` lists the Sections, `pgdemo section 2` says it is coming soon, and `pgdemo section 8` opens its lesson.
+2. `pgdemo section` lists the Sections, `pgdemo section 6` says it is coming soon, and `pgdemo section 8` opens its lesson.
 3. The Browse tab runs lazysql on the playground and follows the lesson when the learner presses `n` or `p`.
 4. `pgdemo 1 view`, `pgdemo top`, and `pgdemo browse 2` each open full screen and quit cleanly.
 5. `pgdemo connect 2` opens `127.0.0.1:5439` only, a real client can query through it, and `pgdemo connect off` closes it.

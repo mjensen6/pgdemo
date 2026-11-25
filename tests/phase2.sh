@@ -47,8 +47,8 @@ ok "help lists every command and explains one with an example"
 
 # section: lists Sections, refuses an unbuilt one, opens a built one.
 ./pgdemo section | grep -qF "Keeping It Healthy" || fail "pgdemo section does not list the Sections"
-out=$(./pgdemo section 2 2>&1 || true)
-grep -qF "coming soon" <<<"$out" || fail "pgdemo section 2 should say it is coming soon"
+out=$(./pgdemo section 6 2>&1 || true)  # Security and Testing: all new lessons, not built yet
+grep -qF "coming soon" <<<"$out" || fail "pgdemo section 6 should say it is coming soon"
 launch section 8
 wait_for "Lesson 31: REPACK" 120
 ok "pgdemo section 8 opens the Section's lesson"
@@ -56,8 +56,8 @@ ok "pgdemo section 8 opens the Section's lesson"
 # The Browse tab runs lazysql on the playground, and follows lesson changes.
 click 12 45; wait_for "Browse: lesson_repack" 20; wait_for "public" 20
 click 3 45; click 10 10
-key p; wait_for "Lesson 2: Transactional DDL" 60
-click 12 45; wait_for "Browse: lesson_transactional_ddl" 20; wait_for "public" 20
+key p; wait_for "Lesson 27: pg_partman" 60
+click 12 45; wait_for "Browse: lesson_pg_partman" 20; wait_for "public" 20
 ok "the Browse tab shows lazysql and follows the lesson"
 click 3 45; click 10 10
 key q; wait_for "Quit and stop the database? y/n"; key y; wait_for "PGDEMO-EXIT=0" 60

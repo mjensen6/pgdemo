@@ -90,7 +90,17 @@ func run(args []string) error {
 	case "psql":
 		return syscall.Exec("/usr/bin/psql", []string{"psql", "-X", "-d", "postgres"}, os.Environ())
 	case "test":
-		return courseTest(c, len(args) > 1 && args[1] == "-v")
+		verbose, only := false, map[string]bool{}
+		for _, a := range args[1:] {
+			if a == "-v" {
+				verbose = true
+			} else if e, err := c.Find(a); err == nil {
+				only[e.Name] = true
+			} else {
+				return err
+			}
+		}
+		return courseTest(c, verbose, only)
 	case "section":
 		return sectionCmd(c, args[1:])
 	case "browse":
@@ -284,10 +294,11 @@ func renderMarkdown(md string) string {
 
 // courseTest plays every built lesson from a clean start: each step, then
 // the check must fail, then the solution, then the check must pass.
-func courseTest(c *Course, verbose bool) error {
+// only, when not empty, limits the run to those lessons.
+func courseTest(c *Course, verbose bool, only map[string]bool) error {
 	failed := 0
 	for _, e := range c.Entries {
-		if e.Lesson == nil {
+		if e.Lesson == nil || (len(only) > 0 && !only[e.Name]) {
 			continue
 		}
 		if err := testLesson(e, verbose); err != nil {
@@ -324,6 +335,12 @@ func testLesson(e *Entry, verbose bool) error {
 		}
 		if err != nil {
 			return fmt.Errorf("step %d: %v\n%s", i+1, err, out)
+		}
+	}
+	// The Live View runs on its own and nobody would see it fail, so try it here.
+	if l.View != "" {
+		if _, err := query(playground(e.Name), l.View); err != nil {
+			return fmt.Errorf("the Live View query fails: %v", firstLine(err.Error()))
 		}
 	}
 	if ok, _ := check(l); ok {
