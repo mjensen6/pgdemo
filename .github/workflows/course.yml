@@ -1,8 +1,30 @@
 name: course
-on: [push, pull_request]
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
 jobs:
+  # Test on both architectures. On main, each then publishes the exact
+  # image it tested, tagged with the source hash the launcher looks for.
   test:
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            runner: ubuntu-latest
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
+    permissions:
+      contents: read
+      packages: write
+    env:
+      IMAGE: ghcr.io/${{ github.repository }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
@@ -14,3 +36,36 @@ jobs:
         run: ./scripts/readme --check
       - name: Course test
         run: ./tests/course.sh
+      - name: Publish this architecture's image
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ACTOR: ${{ github.actor }}
+          ARCH: ${{ matrix.arch }}
+        run: |
+          echo "$TOKEN" | docker login ghcr.io -u "$ACTOR" --password-stdin
+          tag="$IMAGE:src-$(./scripts/source-hash)-$ARCH"
+          docker tag pgdemo:latest "$tag"
+          docker push "$tag"
+
+  # Join the two into one multi-architecture image, only once both passed.
+  publish:
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    env:
+      IMAGE: ghcr.io/${{ github.repository }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Publish the multi-architecture image
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ACTOR: ${{ github.actor }}
+        run: |
+          echo "$TOKEN" | docker login ghcr.io -u "$ACTOR" --password-stdin
+          src="src-$(./scripts/source-hash)"
+          docker buildx imagetools create -t "$IMAGE:$src" -t "$IMAGE:latest" "$IMAGE:$src-amd64" "$IMAGE:$src-arm64"
+          echo "Published $IMAGE:$src"

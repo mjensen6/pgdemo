@@ -78,18 +78,38 @@ check_docker() {
 }
 
 # The image is rebuilt whenever its sources change, for example after git pull.
-source_hash() { cat Dockerfile player/go.mod player/go.sum player/*.go river-demo/go.mod river-demo/go.sum river-demo/*.go | cksum | cut -d' ' -f1; }
+# CI publishes an image for each version of the code, tagged with this hash.
+registry=ghcr.io/mjensen6/pgdemo
+source_hash() { "$root/scripts/source-hash"; }
 image_ready() {
   docker_ image inspect pgdemo:latest >/dev/null 2>&1 \
     && [[ $(cat "$state/image-hash" 2>/dev/null) == "$(source_hash)" ]]
 }
 
+# Download the image CI built and tested from this exact code. PGDEMO_BUILD=1
+# skips it, to always build locally.
+pull_image() {
+  [[ -n ${PGDEMO_BUILD:-} ]] && return 1
+  local tag hash
+  hash=$(source_hash); tag=$registry:src-$hash
+  say "Downloading the course image (about 300 MB, once)..."
+  if ! docker_ pull --quiet "$tag" >/dev/null 2>&1; then
+    say "There's no prebuilt image for this exact code, which is normal if you've changed it. Building it instead."
+    return 1
+  fi
+  docker_ tag "$tag" pgdemo:latest
+  echo "$hash" > "$state/image-hash"
+}
+
 build_image() {
-  # Phase 5 will pull a prebuilt image here first. Until then, build locally.
   say "Building the course image. The first time takes a few minutes..."
   compose build --quiet || die "The build failed. The messages above say why."
   source_hash > "$state/image-hash"
-  compose up -d --wait >/dev/null 2>&1 || true   # swap the running container onto the new image
+}
+
+prepare_image() {
+  pull_image || build_image
+  compose up -d --wait >/dev/null 2>&1 || true   # swap a running container onto the new image
 }
 
 start_db() {
@@ -123,7 +143,7 @@ path_prompt() {
 
 setup() {
   check_docker
-  image_ready || build_image
+  image_ready || prepare_image
   start_db
   path_prompt
 }
@@ -187,6 +207,8 @@ uninstall() {
     return 0
   fi
   compose down --volumes --rmi all --remove-orphans
+  # Images downloaded from the registry are kept under their own names too.
+  docker_ image ls -q "$registry" | sort -u | xargs -r docker_ rmi -f >/dev/null 2>&1 || true
   rm -rf "$state" "$override"
   local link=$HOME/.local/bin/pgdemo
   if [[ -L $link && $(readlink -f "$link") == "$self" ]]; then

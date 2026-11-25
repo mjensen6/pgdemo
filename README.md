@@ -12,7 +12,9 @@ cd pgdemo
 ./pgdemo
 ```
 
-The first run checks Docker, builds the course (a few minutes, once), and opens lesson 1. Run `./pgdemo` again any time to pick up where you left off.
+The first run checks Docker, downloads the course image (about 300 MB, once), and opens lesson 1. Run `./pgdemo` again any time to pick up where you left off.
+
+The image is the one CI built and tested from the same code, for x86-64 and ARM, including Apple Silicon. If you change the Dockerfile or the player, `pgdemo` builds the image locally instead, which takes a few minutes. `PGDEMO_BUILD=1 ./pgdemo setup` always builds locally.
 
 Tested on Linux. If you try it on macOS or anywhere else, please open an issue and say how it went.
 
