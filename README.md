@@ -26,7 +26,7 @@ Tested on Linux. If you try it on macOS or anywhere else, please open an issue a
 │ UPDATE t SET note = ...    │ size   | rows  | dead     │
 │                            │ 912 kB | 10000 | 10000    │
 │ Enter next  b back  c check  h hint  s skip            │
-│ n next lesson  ? help  q quit                          │
+│ p prev lesson  n next lesson  ? help  q quit           │
 └────────────────────────────┴───────────────────────────┘
  Lesson | Browse | Top
 ```
@@ -42,18 +42,26 @@ Click to switch panes and tabs. Press `?` for every key. Each lesson has its own
 ```
 pgdemo                  Start, or resume where you left off
 pgdemo list             All lessons by Section, with progress
+pgdemo section 8        Start a Section (no number lists them)
 pgdemo 5                Open lesson 5 (a name works too: pgdemo repack)
 pgdemo 5 tldr           What it is and why it matters. Runs nothing
 pgdemo 5 info           The full written lesson. Runs nothing
 pgdemo 5 run            Run every step non-stop
+pgdemo 5 view           Reopen the Live View
 pgdemo 5 reset          Wipe the playground and return to step 1
 pgdemo 5 check          Verify the lesson was completed
 pgdemo 5 hint           Hint for the challenge
 pgdemo 5 solution       Show the answer
 pgdemo check            Re-verify every lesson you have opened
+pgdemo browse           Explore the database with lazysql
+pgdemo top              See live server activity with pg_activity
 pgdemo psql             Open plain psql
+pgdemo connect          Optional: connect a desktop app like TablePlus
+pgdemo doctor           Diagnose problems in plain English
 pgdemo stop             Stop the database
-pgdemo help             All commands
+pgdemo uninstall        Remove the container, image, and saved data
+pgdemo help             All commands, grouped by purpose
+pgdemo help check       One command explained, with an example
 ```
 
 Your progress is in the `progress` table of the `pgdemo` database, so you can query it with SQL.
@@ -143,7 +151,8 @@ Each lesson is one Markdown file, `lessons/<name>.md`, and `lessons/course.yaml`
 
 ```bash
 ./tests/course.sh -v    # play every lesson and require its check to pass
-./tests/phase1.sh       # drive the real interface through tmux
+./tests/phase1.sh       # drive the real interface through tmux (wipes your progress)
+./tests/phase2.sh       # test the tools through tmux (keeps your progress)
 ./scripts/readme        # regenerate the lesson list above
 ```
 
@@ -154,7 +163,7 @@ Each lesson is one Markdown file, `lessons/<name>.md`, and `lessons/course.yaml`
 
 ## Safety
 
-This is a learning playground. It uses passwordless local auth and publishes no ports. Don't copy `compose.yaml` to production.
+This is a learning playground. It uses passwordless local auth and publishes no ports. `pgdemo connect` opens one, on 127.0.0.1 only, until `pgdemo connect off`. Don't copy `compose.yaml` to production.
 
 ## License
 

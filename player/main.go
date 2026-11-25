@@ -39,7 +39,10 @@ func run(args []string) error {
 		cmd = args[0]
 	}
 
-	// readme works on a checkout and needs no database.
+	// help and readme need no database, so they work before setup.
+	if cmd == "help" || cmd == "-h" || cmd == "--help" {
+		return help(args[min(1, len(args)):])
+	}
 	if cmd == "readme" {
 		if len(args) < 2 {
 			return fmt.Errorf("usage: pgdemo-player readme <repo-root> [--check]")
@@ -53,9 +56,6 @@ func run(args []string) error {
 	}
 
 	switch cmd {
-	case "help", "-h", "--help":
-		fmt.Print(usage)
-		return nil
 	case "sql-pane":
 		sqlPane(args[1])
 		return nil
@@ -64,6 +64,9 @@ func run(args []string) error {
 		return nil
 	case "top-pane":
 		topPane()
+		return nil
+	case "browse-pane":
+		browsePane(args[1])
 		return nil
 	case "placeholder":
 		placeholder(args[1])
@@ -88,9 +91,18 @@ func run(args []string) error {
 		return syscall.Exec("/usr/bin/psql", []string{"psql", "-X", "-d", "postgres"}, os.Environ())
 	case "test":
 		return courseTest(c, len(args) > 1 && args[1] == "-v")
-	case "section", "browse", "top", "connect", "doctor", "uninstall":
-		fmt.Printf("pgdemo %s arrives in the next build.\n", cmd)
-		return nil
+	case "section":
+		return sectionCmd(c, args[1:])
+	case "browse":
+		return browse(c, args[1:])
+	case "top":
+		return top()
+	case "doctor":
+		return doctor(c)
+	case "connect-info": // used by the launcher's pgdemo connect
+		return connectInfo(c, args[1:])
+	case "connect", "uninstall", "setup", "stop":
+		return fmt.Errorf("pgdemo %s runs on your computer, not in the container. Run it from your terminal", cmd)
 	}
 
 	e, err := c.Find(cmd)
@@ -126,7 +138,7 @@ func run(args []string) error {
 	case "run":
 		return runAll(e)
 	case "view":
-		fmt.Println("pgdemo N view arrives in the next build. The Live View opens with the lesson.")
+		return view(e)
 	default:
 		return fmt.Errorf("unknown lesson command %q. Try: pgdemo help", sub)
 	}
@@ -381,28 +393,3 @@ func readme(root string, checkOnly bool) error {
 	}
 	return os.WriteFile(path, next, 0o644)
 }
-
-const usage = `pgdemo: learn modern PostgreSQL in one-minute lessons.
-
-Start
-  pgdemo                  Start, or resume where you left off
-  pgdemo list             All lessons by Section, with progress
-  pgdemo 5                Open lesson 5 (a name works too: pgdemo repack)
-
-One lesson
-  pgdemo 5 tldr           What it is and why it matters. Runs nothing
-  pgdemo 5 info           The full written lesson. Runs nothing
-  pgdemo 5 run            Run every step non-stop
-  pgdemo 5 reset          Wipe the playground and return to step 1
-  pgdemo 5 check          Verify the lesson was completed
-  pgdemo 5 hint           Hint for the challenge
-  pgdemo 5 solution       Show the answer
-
-Course
-  pgdemo check            Re-verify every lesson you have opened
-  pgdemo psql             Open plain psql
-  pgdemo setup            Check Docker and prepare everything
-  pgdemo stop             Stop the database
-
-Coming in the next build: section, view, browse, top, connect, doctor, uninstall.
-`

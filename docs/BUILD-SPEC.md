@@ -10,18 +10,20 @@ The bar for every decision is: **would this be obvious to someone who did not bu
 
 ## Current state
 
-- The repo has 27 working lessons in `lessons/`, as `.sql` and `.sh` files, run by `./demo`.
-- All 27 passed on real PostgreSQL 19.0. The Docker path has been used by the owner.
+- **Phases 1 and 2 are built.** `./pgdemo`, the Go player, the three-pane screen, progress, and every command in [Commands](#commands) work.
+- **3 of 43 lessons are built** in the new format: `mvcc-bloat`, `transactional-ddl`, and `repack`. The other 40 show as "coming soon".
+- The original 27-lesson course, run by the old `./demo`, is kept in `legacy/` as the source for Phase 3. `01-mvcc-bloat`, `02-transactional-ddl`, and `17-repack` have been converted and removed from it, leaving 24 to convert.
+- `tests/course.sh`, `tests/phase1.sh`, and `tests/phase2.sh` pass on PostgreSQL 19.0.
 - Work happens on branch `design/approachable-cli`. The repo has no remote.
 - `main` holds the original course. Do not merge, push, or publish without the owner's approval.
 - The owner may have the old container `postgres-demo-db-1` running. Leave it alone. The new compose project is named `pgdemo`, so the two do not collide.
 
 ## Build order
 
-Stop at the end of Phase 1 and hand it to the owner. Do not begin Phase 2 until they give feedback.
+Stop at the end of each phase and hand it to the owner. Do not begin the next phase until they give feedback.
 
-1. **Slice.** `./pgdemo`, the three-pane layout, the player, progress, and these 3 lessons: `mvcc-bloat`, `transactional-ddl`, `repack`. All 43 lessons appear in `pgdemo list`, and unbuilt ones show as "coming soon".
-2. **Tools.** All remaining commands, help, `doctor`, `browse`, `top`, and `connect`.
+1. **Slice.** _Done._ `./pgdemo`, the three-pane layout, the player, progress, and these 3 lessons: `mvcc-bloat`, `transactional-ddl`, `repack`. All 43 lessons appear in `pgdemo list`, and unbuilt ones show as "coming soon".
+2. **Tools.** _Done._ All remaining commands, help, `doctor`, `browse`, `top`, and `connect`.
 3. **Convert** the remaining 24 existing lessons to the new format.
 4. **Add** the 16 new lessons.
 5. **Publish** to GitHub only after the owner's final approval. This includes the prebuilt image, CI going live, renaming the folder to `pgdemo`, and replacing the placeholder commit author.
@@ -68,7 +70,7 @@ Assume a full-screen, wide terminal. Do not build medium or phone layouts. If th
 │ UPDATE t SET note = ...    │ size   | rows  | dead     │
 │                            │ 912 kB | 10000 | 10000    │
 │ Enter next  b back  c check  h hint  s skip            │
-│ n next lesson  ? help  q quit                          │
+│ p prev lesson  n next lesson  ? help  q quit           │
 └────────────────────────────┴───────────────────────────┘
  Lesson | Browse | Top
 ```
@@ -91,6 +93,7 @@ Assume a full-screen, wide terminal. Do not build medium or phone layouts. If th
 | c | Check |
 | h | Hint |
 | s | Skip the challenge |
+| p | Previous lesson |
 | n | Next lesson |
 | ? | Full key and command help |
 | q | Quit, after confirmation |
@@ -102,7 +105,7 @@ Assume a full-screen, wide terminal. Do not build medium or phone layouts. If th
 ```
 pgdemo                  Start, or resume where you left off
 pgdemo list             All lessons by Section, with progress
-pgdemo section 8        Start a Section
+pgdemo section 8        Start a Section (no number lists them)
 pgdemo 5                Open lesson 5 in the guided panes
 pgdemo repack           Same, by lesson name
 pgdemo 5 tldr           What it is and why it matters, in 3 lines. Runs nothing
@@ -114,10 +117,10 @@ pgdemo 5 check          Verify the lesson was completed
 pgdemo 5 hint           Hint for the challenge
 pgdemo 5 solution       Show the answer
 pgdemo check            Re-verify every lesson you have opened
-pgdemo browse           Explore the database with lazysql
+pgdemo browse           Explore the database with lazysql (pgdemo browse 2 picks a lesson)
 pgdemo top              See live server activity with pg_activity
 pgdemo psql             Open plain psql
-pgdemo connect          Optional: connect a desktop app like TablePlus
+pgdemo connect          Optional: connect a desktop app like TablePlus (pgdemo connect off undoes it)
 pgdemo setup            Check Docker and prepare everything
 pgdemo doctor           Diagnose problems in plain English
 pgdemo stop             Stop the database
@@ -134,7 +137,7 @@ pgdemo help check       One command explained, with an example
 
 This is fully optional and sets up nothing until first used. The course never downloads TablePlus or any desktop app.
 
-On first use, recreate the container with an extra compose file that publishes `127.0.0.1:5439` to Postgres, keeping the saved volume. Print a ready-to-paste string such as `postgresql://postgres@localhost:5439/<playground>`.
+On first use, it writes `compose.override.yaml`, which publishes `127.0.0.1:5439` to Postgres, and recreates the container, keeping the saved volume. Docker Compose merges that file automatically, so the port stays open across restarts until `pgdemo connect off` deletes it. The file is in `.gitignore`. It prints a ready-to-paste string such as `postgresql://postgres@localhost:5439/<playground>`, for the lesson named or the one worked on last.
 
 The owner chose ease of use here, so **no password is generated**. Keep the port bound to `127.0.0.1` so it is never reachable from other machines.
 
@@ -176,16 +179,17 @@ UPDATE t SET note = 'world';
 
 ## Challenge
 
-Shrink table `t` back down.
+Set every note to 'done' without making `t` any bigger.
 
-Hint: There's a command new in Postgres 19.
+Hint: What gave you free space before?
 
 ```solution
-REPACK t;
+VACUUM t;
+UPDATE t SET note = 'done';
 ```
 
 ```check
-SELECT pg_table_size('t') < 600000;
+SELECT pg_table_size('t') < 1000000 AND NOT EXISTS (SELECT FROM t WHERE note <> 'done');
 ```
 ````
 
@@ -202,6 +206,10 @@ SELECT pg_table_size('t') < 600000;
 | `cleanup` | Optional. Undoes server-wide effects |
 
 Every lesson needs a `tldr`, a challenge, a hint, a solution, and a check.
+
+A challenge practices what the lesson just taught. It may combine the steps in a new way, but the solution must use only commands and ideas the lesson explained. Never make the learner discover a new command from the hint.
+
+The Intro follows the MVCC lesson's shape: what the feature is, why it works that way, what it costs or where it stops, a **Where it came from** paragraph, and a table explaining each Live View column. **Where it came from** gives the Postgres version and year the feature arrived, and says whether it started outside core, as a contrib module or a third-party extension that became common enough to be built in. Check these facts against release notes or commit messages, not memory.
 
 ### Intro and steps
 
@@ -229,6 +237,8 @@ A check verifies the **result in the playground, never the typed text**, so any 
 Replication, scheduled jobs, and server settings belong to the whole server, so they cannot be fully isolated. These lessons are grouped in Section 10 and labeled as sharing the server, both in `pgdemo list` and in the lesson itself. They must run their `cleanup` block when the learner leaves or resets. `pgdemo doctor` flags leftovers such as cron jobs, replication slots, and subscriptions.
 
 ### Course order
+
+Sources marked with a file name are in `legacy/lessons/`.
 
 | # | Section | Lesson name | Source |
 |---|---|---|---|
@@ -323,13 +333,13 @@ Only a passed check marks a lesson done.
 ## Docker
 
 - Base image: `postgres:19`, using its Debian packages.
-- Add: tmux, pgcli, pspg, pg-activity, and the player. Build lazysql in a Go build stage at a pinned version.
+- Add: tmux, pgcli, pspg, pg-activity, and the player. Build lazysql in a Go build stage at a pinned version (v0.7.0). Build it from source, so no telemetry endpoint is compiled in, and also pass `--no-telemetry` and set `DO_NOT_TRACK=1` and `LAZYSQL_NO_UPDATE_CHECK=1`, so it never contacts the network.
 - Add extensions: `postgresql-19-` plus `cron`, `partman`, `pgvector`, `postgis-3`, `postgis-3-scripts`, `repack`, `squeeze`, `hypopg`, `pg-ivm`, `pgrouting`, `hll`, `pgaudit`, `pgtap`, and the `pgbouncer` package.
 - PostgREST is not in those packages. Add a pinned release in the image for its lesson.
 - River needs a small Go demo program compiled into the image.
 - Set the compose project name to `pgdemo`.
 - Keep the whole server on a named Docker volume so playgrounds and progress survive restarts. This replaces the current in-memory `tmpfs`.
-- Publish no ports by default.
+- Publish no ports by default. Only `pgdemo connect` opens one.
 - Authentication stays local `trust`. This is a learning playground.
 
 Required server settings:
@@ -362,17 +372,19 @@ These come from project docs or memory and have not been run here:
 - pspg's documented `--query` and `--watch` work for the Live View with Postgres 19.
 - lazysql and pg_activity work with Postgres 19.
 - The new extension packages install and load together on the `postgres:19` image.
-- In lesson 1, `REPACK t` brings table `t` under the 600 kB check after a second update.
 - The nested tmux case handles mouse and keys when the learner is already in tmux.
 
 If one fails, choose the simplest substitute that keeps the experience the same, and tell the owner.
 
-Phase 1 result: all of the above were verified on `postgres:19` (19.0, Debian trixie) except lazysql, which arrives with `browse` in Phase 2. pgcli 4.3.0, pspg 5.9.1, pg_activity 3.6.2, and all 14 extensions load together. After a second update, `REPACK t` takes table `t` from 934 kB to 459 kB. Nested tmux passes mouse clicks for panes and tabs.
+Phase 1 result: all of the above were verified on `postgres:19` (19.0, Debian trixie) pgcli 4.3.0, pspg 5.9.1, pg_activity 3.6.2, and all 14 extensions load together. Nested tmux passes mouse clicks for panes and tabs.
+
+Phase 2 result: lazysql v0.7.0 works with Postgres 19 over the container's local TCP connection, in the Browse tab and through `pgdemo browse`. It asks "Exit LazySQL?" before quitting.
 
 ## Testing
 
 - Test on Linux. The owner will try macOS. The README must say Linux is tested and ask for reports from others.
 - Drive the real interface in tests with tmux `send-keys` and `capture-pane`. Do not only unit test the parser.
+- `tests/phase1.sh` starts from a clean state and wipes the container and volume, including progress. `tests/phase2.sh` keeps them.
 - A course test runs every lesson's steps and solution from a clean start, then requires its check to pass.
 - Add a simple GitHub Actions workflow that runs the course test. Keep it simple for now.
 - Generate the README's numbered lesson list from `course.yaml`, and fail the tests if it is out of date.
@@ -392,6 +404,18 @@ From a clean state with no `pgdemo` container or volume:
 9. All of the above also works when launched from inside an existing tmux session.
 
 Then stop, tell the owner how to try it, and wait for feedback.
+
+### Phase 2 is done when
+
+`tests/phase2.sh` checks each of these:
+
+1. `pgdemo help` lists every command above, and `pgdemo help check` explains one with an example. No command says it "arrives in the next build".
+2. `pgdemo section` lists the Sections, `pgdemo section 2` says it is coming soon, and `pgdemo section 8` opens its lesson.
+3. The Browse tab runs lazysql on the playground and follows the lesson when the learner presses `n` or `p`.
+4. `pgdemo 1 view`, `pgdemo top`, and `pgdemo browse 2` each open full screen and quit cleanly.
+5. `pgdemo connect 2` opens `127.0.0.1:5439` only, a real client can query through it, and `pgdemo connect off` closes it.
+6. `pgdemo doctor` passes on a healthy setup and explains a leftover replication slot with the command to remove it.
+7. `pgdemo uninstall` asks first, and answering no removes nothing.
 
 ## Repo and publishing rules
 

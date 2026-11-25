@@ -128,6 +128,152 @@ setup() {
   path_prompt
 }
 
+# --- connect ----------------------------------------------------------------
+
+# Docker Compose merges compose.override.yaml automatically, so once
+# connect writes it, every later start keeps the port open.
+override=$root/compose.override.yaml
+connect_port=5439
+
+connect() {
+  check_docker
+  image_ready || setup
+  if [[ ${1:-} == off ]]; then
+    if [[ -e $override ]]; then
+      rm -f "$override"
+      compose up -d --wait >/dev/null 2>&1 || compose up -d --wait
+      say "Port $connect_port is closed again. Desktop apps can no longer connect."
+    else
+      say "Port $connect_port isn't open, so there's nothing to close."
+    fi
+    return 0
+  fi
+  if [[ ! -e $override ]]; then
+    say "Opening port $connect_port on this computer only (127.0.0.1), so no other machine can reach it..."
+    cat > "$override" <<YAML
+# Written by pgdemo connect. pgdemo connect off removes it.
+services:
+  db:
+    ports:
+      - "127.0.0.1:$connect_port:5432"
+YAML
+    if ! compose up -d --wait >/dev/null 2>&1; then
+      rm -f "$override"
+      compose up -d --wait >/dev/null 2>&1 || true
+      die "Port $connect_port couldn't be opened. Something else on this computer may be using it."
+    fi
+  fi
+  start_db
+  local info db label
+  info=$(player connect-info "$@") || exit 1
+  db=${info%%$'\t'*}; label=${info#*$'\t'}
+  say "Connect your desktop app to $label's playground with:"
+  say ""
+  say "  postgresql://postgres@localhost:$connect_port/$db"
+  say ""
+  say "Host localhost, port $connect_port, user postgres, database $db, no password."
+  say "Another lesson: pgdemo connect 2. Close the port again: pgdemo connect off"
+}
+
+# --- uninstall --------------------------------------------------------------
+
+uninstall() {
+  check_docker
+  say "This removes the pgdemo container, its image, and the saved data,"
+  say "including your progress and every lesson's playground."
+  say "The files in this folder stay, so ./pgdemo can set everything up again."
+  if ! ask "Remove everything?" n; then
+    say "Nothing was removed."
+    return 0
+  fi
+  compose down --volumes --rmi all --remove-orphans
+  rm -rf "$state" "$override"
+  local link=$HOME/.local/bin/pgdemo
+  if [[ -L $link && $(readlink -f "$link") == "$self" ]]; then
+    rm -f "$link"
+    say "Removed the pgdemo link from ~/.local/bin."
+  fi
+  say "pgdemo is uninstalled. To remove the course files too, delete this folder."
+}
+
+# --- doctor -----------------------------------------------------------------
+
+doctor() {
+  local problems=0
+  local g='✓' x='✗'; [[ -t 1 ]] && g=$'\033[32m✓\033[0m' x=$'\033[31m✗\033[0m'
+  good() { printf '  %s %s\n' "$g" "$1"; }
+  bad()  { printf '  %s %s\n' "$x" "$1"; shift; local l; for l in "$@"; do say "      $l"; done; problems=$((problems + 1)); }
+  say "On this computer"
+
+  if ! command -v docker >/dev/null; then
+    bad "Docker isn't installed." "Install it with: $(install_hint)"
+    return 1
+  fi
+  good "Docker is installed ($(docker --version | sed 's/^Docker version //; s/,.*//'))"
+
+  if docker info >/dev/null 2>&1; then
+    good "The Docker daemon is running and this account can use it"
+  elif id -nG "$USER" 2>/dev/null | tr ' ' '\n' | grep -qx docker && sg docker -c 'docker info' >/dev/null 2>&1; then
+    use_sg=1
+    bad "This terminal started before your account joined the docker group." \
+        "pgdemo works around it for now. Log out and back in to fix it for good."
+  elif [[ $(docker info 2>&1 >/dev/null) == *"permission denied"* ]]; then
+    bad "Your account can't use Docker yet." "Run: sudo usermod -aG docker \$USER, then log out and back in."
+    return 1
+  else
+    bad "The Docker daemon isn't running." "Start it: sudo systemctl start docker (on a Mac, open Docker from Applications)."
+    return 1
+  fi
+
+  if ! docker_ image inspect pgdemo:latest >/dev/null 2>&1; then
+    bad "The course image isn't built yet." "Build it with: pgdemo setup"
+    return 1
+  elif image_ready; then
+    good "The course image is built and up to date"
+  else
+    bad "The course image is older than the code in this folder, for example after git pull." "Rebuild it with: pgdemo setup"
+  fi
+
+  if [[ -n $(compose ps --status running -q db 2>/dev/null) ]]; then
+    good "The course database is running"
+  else
+    say "  · The database was stopped, which is normal after q. Starting it to check inside..."
+    if ! compose up -d --wait >/dev/null 2>&1; then
+      bad "The course database won't start." "See why with: docker compose logs db"
+      return 1
+    fi
+    good "The course database started"
+  fi
+
+  if [[ -e $override ]]; then
+    good "Port $connect_port is open for desktop apps, on 127.0.0.1 only (pgdemo connect off closes it)"
+  fi
+
+  if command -v pgdemo >/dev/null 2>&1; then
+    good "pgdemo is on your PATH"
+  else
+    say "  · pgdemo isn't on your PATH, so run it as ./pgdemo from this folder. That's fine."
+  fi
+
+  local cols lines
+  cols=$(tput cols 2>/dev/null || echo 0); lines=$(tput lines 2>/dev/null || echo 0)
+  if (( cols >= 120 && lines >= 30 )); then
+    good "This terminal is ${cols}x${lines}, big enough for the three panes"
+  elif [[ -t 1 ]]; then
+    bad "This terminal is ${cols}x${lines}. Lessons work best at 120x30 or larger." "Maximize the window, or make the font smaller."
+  fi
+
+  say ""
+  local rc=0
+  player doctor || rc=$?
+  say ""
+  if (( problems == 0 && rc == 0 )); then
+    say "Everything looks healthy."
+  else
+    return 1
+  fi
+}
+
 # --- Forward to the player --------------------------------------------------
 
 player() {
@@ -155,7 +301,22 @@ case ${1:-} in
     say "The database is stopped. Run pgdemo to pick up where you left off."
     ;;
   help|-h|--help)
-    check_docker; image_ready && start_db && player help || sed -n '2,6p' "$self"
+    # Help needs no database, so it runs in a throwaway container.
+    if command -v docker >/dev/null && docker_ image inspect pgdemo:latest >/dev/null 2>&1; then
+      docker_ run --rm --network none --entrypoint pgdemo-player pgdemo:latest help "${@:2}"
+    else
+      sed -n '2,6p' "$self" | sed 's/^# \{0,1\}//'
+      say "Run ./pgdemo setup first, then pgdemo help lists every command."
+    fi
+    ;;
+  connect)
+    connect "${@:2}"
+    ;;
+  uninstall)
+    uninstall
+    ;;
+  doctor)
+    doctor
     ;;
   "")
     setup

@@ -107,9 +107,9 @@ func openLesson(c *Course, e *Entry) error {
 		{"select-pane", "-t", tmuxSession + ":Lesson.0", "-T", e.Label()},
 		{"select-pane", "-t", tmuxSession + ":Lesson.1", "-T", "SQL"},
 		{"select-pane", "-t", tmuxSession + ":Lesson.2", "-T", "Live View"},
-		{"new-window", "-d", "-t", tmuxSession + ":", "-n", "Browse", paneCmd("placeholder", "Browse opens lazysql to explore the database. It arrives in the next build.")},
+		{"new-window", "-d", "-t", tmuxSession + ":", "-n", "Browse", paneCmd("browse-pane", db)},
 		{"new-window", "-d", "-t", tmuxSession + ":", "-n", "Top", paneCmd("top-pane")},
-		{"select-pane", "-t", tmuxSession + ":Browse.0", "-T", "Browse"},
+		{"select-pane", "-t", tmuxSession + ":Browse.0", "-T", browseTitle(db)},
 		{"select-pane", "-t", tmuxSession + ":Top.0", "-T", "Top: live server activity (pg_activity, q to restart)"},
 		{"select-window", "-t", tmuxSession + ":Lesson"},
 		{"select-pane", "-t", tmuxSession + ":Lesson.0"},
@@ -150,6 +150,8 @@ func switchLesson(e *Entry) error {
 	for _, s := range [][]string{
 		{"respawn-pane", "-k", "-t", tmuxSession + ":Lesson.1", paneCmd("sql-pane", db)},
 		{"respawn-pane", "-k", "-t", tmuxSession + ":Lesson.2", paneCmd("live-pane", e.Name)},
+		{"respawn-pane", "-k", "-t", tmuxSession + ":Browse.0", paneCmd("browse-pane", db)},
+		{"select-pane", "-t", tmuxSession + ":Browse.0", "-T", browseTitle(db)},
 		{"select-pane", "-t", tmuxSession + ":Lesson.0", "-T", e.Label()},
 		{"select-pane", "-t", tmuxSession + ":Lesson.1", "-T", "SQL"},
 		{"select-pane", "-t", tmuxSession + ":Lesson.2", "-T", "Live View"},
@@ -160,6 +162,10 @@ func switchLesson(e *Entry) error {
 		}
 	}
 	return nil
+}
+
+func browseTitle(db string) string {
+	return "Browse: " + db + " (lazysql, ? for keys)"
 }
 
 func quitSession() {
