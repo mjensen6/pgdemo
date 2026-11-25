@@ -182,6 +182,9 @@ keyring = False
 less_chatty = True
 multi_line = False
 prompt = '\d=# '
+# Playgrounds are made to be broken, and r resets them, so pgcli doesn't
+# stop to ask "are you sure?" before UPDATE, DELETE, ALTER, or DROP.
+destructive_warning = off
 `), 0o644)
 }
 

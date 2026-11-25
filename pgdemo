@@ -9,7 +9,7 @@ set -euo pipefail
 self=$(readlink -f "${BASH_SOURCE[0]}")
 root=$(dirname "$self")
 cd "$root"
-state=$root/.pgdemo
+state=${PGDEMO_STATE:-$root/.pgdemo}   # tests point this elsewhere
 mkdir -p "$state"
 
 say()  { printf '%s\n' "$*"; }

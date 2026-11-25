@@ -151,7 +151,7 @@ Each lesson is one Markdown file, `lessons/<name>.md`, and `lessons/course.yaml`
 
 ```bash
 ./tests/course.sh -v    # play every lesson and require its check to pass
-./tests/phase1.sh       # drive the real interface through tmux (wipes your progress)
+./tests/phase1.sh       # drive the real interface through tmux, from a clean start
 ./tests/phase2.sh       # test the tools through tmux (keeps your progress)
 ./scripts/readme        # regenerate the lesson list above
 ```

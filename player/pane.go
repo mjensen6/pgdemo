@@ -162,7 +162,7 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if msg.err != nil {
 			m.msg = warnStyle.Render("Could not "+msg.what+": ") + msg.err.Error()
 		} else if msg.what == "reset the lesson" {
-			m.msg = okStyle.Render("Reset.") + " The playground is back to how the lesson started."
+			m.msg = okStyle.Render("Reset to the start.") + " " + m.nextHint()
 		}
 		m.refresh(true)
 		return m, nil
@@ -176,6 +176,27 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m.key(msg)
 	}
 	return m, nil
+}
+
+// nextHint says what Enter does from here. The status line always shows
+// it, because on a long page the same words at the end may be off screen.
+func (m *model) nextHint() string {
+	n := len(m.steps())
+	switch {
+	case m.pos == posOverview:
+		return "Press Enter to begin."
+	case m.pos == -1:
+		return "Press Enter to see step 1."
+	case m.pos < n && m.running:
+		return "Running..."
+	case m.pos < n && m.steps()[m.pos].Lang != "" && m.pos == m.ran:
+		return "Press Enter to run it."
+	case m.pos < n && m.pos < m.ran:
+		return m.afterRun()
+	case m.pos < n:
+		return "Press Enter to continue."
+	}
+	return "Type your answer in the SQL pane, then press Enter here to check it."
 }
 
 func (m *model) key(k tea.KeyMsg) (tea.Model, tea.Cmd) {
@@ -468,6 +489,14 @@ func (m *model) View() string {
 	keys1 := strings.Join([]string{k("Enter", enter), k("b", "back"), k("r", "reset"), k("c", "check"), k("h", "hint"), k("s", "skip")}, "  ")
 	keys2 := strings.Join([]string{k("p", "prev lesson"), k("n", "next lesson"), k("?", "help"), k("q", "quit")}, "  ")
 	status := m.msg
+	if status == "" {
+		status = m.nextHint()
+	}
+	// On a long page, say there's more, but never at the cost of the hint.
+	if more := keyStyle.Render("↓ More below") + dimStyle.Render(", ↑ ↓ to scroll · "); !m.vp.AtBottom() &&
+		lipgloss.Width(more+status) <= m.width {
+		status = more + status
+	}
 	switch m.confirm {
 	case "quit":
 		status = warnStyle.Render("Quit and stop the database? y/n")

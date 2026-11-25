@@ -1,12 +1,22 @@
 #!/usr/bin/env bash
 # Phase 1 acceptance test. Drives the real interface through tmux, starting
 # from a clean state with no pgdemo container or volume. The image is kept
-# unless you pass --rebuild.
+# unless you pass --rebuild, which removes the shared pgdemo:latest image
+# and builds it again.
+#
+# It runs in a Compose project of its own, pgdemo-test, with its own volume
+# and state folder, so your own course, progress, and connect port are never
+# touched. Its container and volume are removed when it finishes.
 #
 # The whole run happens inside a tmux server of its own, so it also covers
 # launching pgdemo from inside an existing tmux session.
 set -euo pipefail
 cd "$(dirname "$0")/.."
+
+export COMPOSE_PROJECT_NAME=pgdemo-test   # takes precedence over the name in compose.yaml
+export COMPOSE_FILE=compose.yaml          # leaves out compose.override.yaml, from pgdemo connect
+scratch=$(mktemp -d)
+export PGDEMO_STATE=$scratch/state        # a first-run state folder, not your .pgdemo
 
 T="tmux -L pgdemo-test"
 IN="docker compose exec -T -u postgres db tmux -L pgdemo"
@@ -39,10 +49,15 @@ quit() {
   screen | grep -qF "Run pgdemo to pick up where you left off." || fail "q did not print how to resume"
   [[ -z $(docker compose ps --status running -q db) ]] || fail "q did not stop the database"
 }
-trap '$T kill-server 2>/dev/null || true' EXIT
+cleanup() {
+  $T kill-server 2>/dev/null || true
+  docker compose down -v >/dev/null 2>&1 || true
+  rm -rf "$scratch"
+}
+trap cleanup EXIT
 
 if [[ ${1:-} == --rebuild ]]; then docker compose down -v --rmi all; else docker compose down -v; fi
-rm -rf .pgdemo && mkdir -p .pgdemo && touch .pgdemo/path-asked  # leave the tester's PATH alone
+mkdir -p "$PGDEMO_STATE" && touch "$PGDEMO_STATE/path-asked"  # leave the tester's PATH alone
 
 # 1. Builds, starts, and opens lesson 1 in three panes with no manual steps.
 launch
@@ -125,7 +140,7 @@ key Enter; key Enter; wait_for "That was the last step."
 size() { docker compose exec -T -u postgres db psql -X -At -d lesson_repack -c "SELECT pg_table_size('t')"; }
 (( $(size) < 10000000 )) || fail "REPACK did not shrink the table"
 key r; wait_for "Reset this lesson?"
-key y; wait_for "Reset." 60
+key y; wait_for "Reset to the start." 60
 wait_for "Press Enter to see step 1."
 wait_for "lesson_repack=#"
 (( $(size) > 20000000 )) || fail "r did not rebuild the playground"
@@ -136,7 +151,7 @@ ok "r resets the lesson in place and returns to its start"
 ./pgdemo 1 tldr     | grep -qF "Updates leave dead rows behind" || fail "tldr"
 ./pgdemo 1 info     | grep -qF "Step 2"                        || fail "info"
 ./pgdemo 1 hint     | grep -qF "Hint:"                         || fail "hint"
-./pgdemo 1 solution | grep -qF "REPACK t"                      || fail "solution"
+./pgdemo 1 solution | grep -qF "VACUUM t"                      || fail "solution"
 ./pgdemo 1 reset    | grep -qF "back at step 1"                || fail "reset"
 ./pgdemo 1 check    | grep -qF "Not yet"                       || fail "reset did not rebuild the playground"
 ./pgdemo list       | grep -q "●   1  mvcc-bloat"              || fail "reset removed the done status"

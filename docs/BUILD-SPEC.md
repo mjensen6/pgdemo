@@ -388,7 +388,7 @@ Phase 2 result: lazysql v0.7.0 works with Postgres 19 over the container's local
 
 - Test on Linux. The owner will try macOS. The README must say Linux is tested and ask for reports from others.
 - Drive the real interface in tests with tmux `send-keys` and `capture-pane`. Do not only unit test the parser.
-- `tests/phase1.sh` starts from a clean state and wipes the container and volume, including progress. `tests/phase2.sh` keeps them.
+- `tests/phase1.sh` starts from a clean state in a Compose project of its own, `pgdemo-test`, with its own volume and state folder (`PGDEMO_STATE`), so it never touches the tester's course or progress. `tests/phase2.sh` runs against the tester's own course and keeps its progress.
 - A course test runs every lesson's steps and solution from a clean start, then requires its check to pass.
 - Add a simple GitHub Actions workflow that runs the course test. Keep it simple for now.
 - Generate the README's numbered lesson list from `course.yaml`, and fail the tests if it is out of date.
