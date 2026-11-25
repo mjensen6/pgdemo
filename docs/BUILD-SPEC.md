@@ -10,13 +10,14 @@ The bar for every decision is: **would this be obvious to someone who did not bu
 
 ## Current state
 
-- **Phases 1 to 4 are built.** Phase 5, publishing, waits for the owner's approval. `./pgdemo`, the Go player, the three-pane screen, progress, and every command in [Commands](#commands) work.
+- **All five phases are done.** `./pgdemo`, the Go player, the three-pane screen, progress, and every command in [Commands](#commands) work.
 - **All 43 lessons are built**: the 27 from the original course, converted, and the 16 new ones. The player still supports "coming soon" for any lesson added to `course.yaml` before its file exists.
 - The original course's scripts were the source for Phase 3, and have been removed. They're still in `main`'s history.
 - `tests/course.sh`, `tests/phase1.sh`, and `tests/phase2.sh` pass on PostgreSQL 19.0.
 - The repo is public at https://github.com/mjensen6/pgdemo. The course was built on branch `design/approachable-cli` and merged into `main` with the owner's approval.
 - The original 27-lesson course is the first commit on `main`, `Add 27-lesson PostgreSQL 19 feature course`.
-- The owner may have the old container `postgres-demo-db-1` running. Leave it alone. The new compose project is named `pgdemo`, so the two do not collide.
+- The old container `postgres-demo-db-1` was removed with the owner's approval.
+- Ideas for more lessons and extensions are in [`BACKLOG.md`](BACKLOG.md).
 
 ## Build order
 
