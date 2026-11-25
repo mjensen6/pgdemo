@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -261,7 +262,12 @@ func runStep(s *Session, step Step) (string, error) {
 		cmd.Env = append(os.Environ(), "PGDATABASE="+s.db)
 		var b bytes.Buffer
 		cmd.Stdout, cmd.Stderr = &b, &b
+		// A background job that keeps the output open must not hang the step.
+		cmd.WaitDelay = time.Second
 		err := cmd.Run()
+		if errors.Is(err, exec.ErrWaitDelay) {
+			err = nil
+		}
 		return strings.TrimRight(b.String(), "\n"), err
 	}
 	return "", nil

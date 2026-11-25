@@ -78,7 +78,7 @@ check_docker() {
 }
 
 # The image is rebuilt whenever its sources change, for example after git pull.
-source_hash() { cat Dockerfile player/go.mod player/go.sum player/*.go | cksum | cut -d' ' -f1; }
+source_hash() { cat Dockerfile player/go.mod player/go.sum player/*.go river-demo/go.mod river-demo/go.sum river-demo/*.go | cksum | cut -d' ' -f1; }
 image_ready() {
   docker_ image inspect pgdemo:latest >/dev/null 2>&1 \
     && [[ $(cat "$state/image-hash" 2>/dev/null) == "$(source_hash)" ]]

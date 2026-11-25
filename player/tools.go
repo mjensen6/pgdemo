@@ -182,11 +182,12 @@ func (d *doctorReport) bad(msg, fix string) {
 var courseExtensions = []string{
 	"pg_stat_statements", "pgstattuple", "pg_cron", "pg_partman", "vector", "postgis",
 	"pgrouting", "pg_repack", "pg_squeeze", "hypopg", "pg_ivm", "hll", "pgaudit", "pgtap",
+	"pg_buffercache", "pg_trgm", "btree_gist", "pgrowlocks", "dblink", "postgres_fdw",
 }
 
 var coursePreload = []string{"pg_stat_statements", "pg_cron", "pg_squeeze", "pgaudit"}
 
-var courseTools = []string{"tmux", "pgcli", "pspg", "pg_activity", "lazysql", "pgbouncer"}
+var courseTools = []string{"tmux", "pgcli", "pspg", "pg_activity", "lazysql", "pgbouncer", "postgrest", "river-demo", "curl"}
 
 // doctor checks everything inside the container and explains each problem
 // in plain English, with the command that fixes it.

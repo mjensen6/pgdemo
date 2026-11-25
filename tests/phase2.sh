@@ -11,6 +11,14 @@ IN="docker compose exec -T -u postgres db tmux -L pgdemo"
 screen() { $T capture-pane -p -t t 2>/dev/null || true; }
 ok()     { printf 'ok   %s\n' "$*"; }
 fail()   { printf 'FAIL %s\n\n--- screen ---\n' "$*"; screen; exit 1; }
+wait_re() { # wait_re REGEX [SECONDS]
+  local i
+  for ((i = 0; i < ${2:-30} * 4; i++)); do
+    screen | grep -qE -- "$1" && return 0
+    sleep 0.25
+  done
+  fail "timed out waiting for a match of: $1"
+}
 wait_for() { # wait_for TEXT [SECONDS]
   local i
   for ((i = 0; i < ${2:-30} * 4; i++)); do
@@ -47,17 +55,21 @@ ok "help lists every command and explains one with an example"
 
 # section: lists Sections, refuses an unbuilt one, opens a built one.
 ./pgdemo section | grep -qF "Keeping It Healthy" || fail "pgdemo section does not list the Sections"
-out=$(./pgdemo section 6 2>&1 || true)  # Security and Testing: all new lessons, not built yet
-grep -qF "coming soon" <<<"$out" || fail "pgdemo section 6 should say it is coming soon"
+out=$(./pgdemo section 99 2>&1 || true)
+grep -qF "Sections run from 1 to 10" <<<"$out" || fail "pgdemo section 99 should say which Sections exist"
 launch section 8
+wait_re "Lesson 3[0-4]: " 120   # Section 8's first lesson you haven't finished
+ok "pgdemo section 8 opens one of the Section's lessons"
+key q; wait_for "Quit and stop the database? y/n"; key y; wait_for "PGDEMO-EXIT=0" 60
+
+launch repack
 wait_for "Lesson 31: REPACK" 120
-ok "pgdemo section 8 opens the Section's lesson"
 
 # The Browse tab runs lazysql on the playground, and follows lesson changes.
 click 12 45; wait_for "Browse: lesson_repack" 20; wait_for "public" 20
 click 3 45; click 10 10
-key p; wait_for "Lesson 27: pg_partman" 60
-click 12 45; wait_for "Browse: lesson_pg_partman" 20; wait_for "public" 20
+key p; wait_for "Lesson 30: pg_activity" 60
+click 12 45; wait_for "Browse: lesson_pg_activity" 20; wait_for "public" 20
 ok "the Browse tab shows lazysql and follows the lesson"
 click 3 45; click 10 10
 key q; wait_for "Quit and stop the database? y/n"; key y; wait_for "PGDEMO-EXIT=0" 60

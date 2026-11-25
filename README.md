@@ -77,13 +77,13 @@ Your progress is in the `progress` table of the `pgdemo` database, so you can qu
 
 **2. Modern SQL**
 
-3. `window-functions` _(coming soon)_
-4. `recursive-queries` _(coming soon)_
+3. [Window functions](lessons/window-functions.md): Rank, running totals, and comparisons with the previous row, computed across related rows without collapsing them the way GROUP BY does.
+4. [Recursive queries](lessons/recursive-queries.md): WITH RECURSIVE walks trees and graphs, such as an org chart, a folder tree, or a comment thread, in a single query.
 5. [MERGE](lessons/merge.md): Insert, update, and delete in one statement, by comparing a source table with a target table row by row.
 6. [ON CONFLICT DO SELECT, new in Postgres 19](lessons/on-conflict-do-select.md): Get a row, or create it if it's missing, in one race-free statement that writes nothing when the row already exists.
 7. [Generated columns](lessons/generated-columns.md): A column Postgres computes from the rest of the row, so it can never be out of date. Virtual ones cost no disk space.
 8. [UUIDs, random and time-ordered](lessons/uuid.md): UUIDs are IDs you can make anywhere without asking the database. Time-ordered v7 ones keep indexes small and fast.
-9. `materialized-views` _(coming soon)_
+9. [Materialized views](lessons/materialized-views.md): Save a slow query's result as a table you can index, and refresh it when you choose, even without blocking readers.
 
 **3. Documents and Search**
 
@@ -98,31 +98,31 @@ Your progress is in the `progress` table of the `pgdemo` database, so you can qu
 15. [Asynchronous I/O, new in Postgres 18](lessons/async-io.md): Postgres now asks for many pages at once instead of waiting for each one, which speeds up big scans on slow disks.
 16. [pg_stat_statements](lessons/pg-stat-statements.md): Postgres keeps a running tally of every query shape, so you can see which ones use the most time and fix those first.
 17. [pg_plan_advice, new in Postgres 19](lessons/plan-advice.md): Write down a query plan as advice, then hand it back so the planner sticks to it. A safety valve for the rare plan that goes wrong.
-18. `hypopg` _(coming soon)_
+18. [HypoPG](lessons/hypopg.md): Ask the planner whether an index would help before you spend the time and disk to build it.
 
 **5. Queues and Events**
 
 19. [SKIP LOCKED](lessons/skip-locked.md): Build a job queue on a plain table. Each worker grabs a job no one else holds, without waiting and without extra software.
-20. `listen-notify` _(coming soon)_
-21. `advisory-locks` _(coming soon)_
-22. `river` _(coming soon)_
+20. [LISTEN and NOTIFY](lessons/listen-notify.md): One session sends a message and every session listening gets it at once, with no polling, and only when the sender's transaction commits.
+21. [Advisory locks](lessons/advisory-locks.md): Lock on a number your app chooses, to make sure only one worker runs a job at a time, with no table to lock.
+22. [River](lessons/river.md): A real Go job queue that keeps its jobs in a Postgres table, so enqueueing a job can be part of the same transaction as your data.
 
 **6. Security and Testing**
 
-23. `row-level-security` _(coming soon)_
-24. `pgaudit` _(coming soon)_
-25. `pgtap` _(coming soon)_
+23. [Row-level security](lessons/row-level-security.md): Two users query the same table and see different rows, because the database itself filters them, whatever query the app sends.
+24. [pgaudit](lessons/pgaudit.md): A detailed log of who read or changed what, for the audits that security and compliance rules demand.
+25. [pgTAP](lessons/pgtap.md): Unit tests written in SQL, for your functions, tables, and constraints, run inside the database and rolled back afterwards.
 
 **7. Data at Scale**
 
 26. [Partitioning](lessons/partitioning.md): Split one big table into pieces by date or value. Queries read only the pieces they need, and old data drops in an instant.
 27. [pg_partman](lessons/pg-partman.md): An extension that creates future partitions before you need them and drops old ones on schedule, so a partitioned table runs itself.
-28. `pg-ivm` _(coming soon)_
-29. `hll` _(coming soon)_
+28. [pg_ivm](lessons/pg-ivm.md): A materialized view that keeps itself up to date on every change, so it's fast to read and never stale.
+29. [HyperLogLog](lessons/hll.md): Count unique visitors approximately, with about 2% error, in about a kilobyte, and combine days into weeks, which exact counts can't do.
 
 **8. Keeping It Healthy**
 
-30. `pg-activity` _(coming soon)_
+30. [pg_activity](lessons/pg-activity.md): See what the server is doing right now, find the session that's blocking everyone else, and stop it.
 31. [REPACK, new in Postgres 19](lessons/repack.md): REPACK rebuilds a bloated table to its real size. With CONCURRENTLY, the app keeps writing while it runs.
 32. [pg_repack](lessons/pg-repack.md): The classic extension for rebuilding a bloated table while the app keeps running, on any Postgres version, not just 19.
 33. [pg_squeeze](lessons/pg-squeeze.md): Rebuild a bloated table online from inside SQL, using logical decoding. It's the extension REPACK CONCURRENTLY grew out of.
@@ -132,9 +132,9 @@ Your progress is in the `progress` table of the `pgdemo` database, so you can qu
 
 35. [pgvector](lessons/pgvector.md): Store embeddings next to your data and find the most similar items with one ORDER BY. The core of search and recommendations in AI apps.
 36. [PostGIS](lessons/postgis.md): Store places as real geography and ask spatial questions in SQL, such as how far apart two places are and what's within 300 miles.
-37. `pgrouting` _(coming soon)_
-38. `foreign-data-wrappers` _(coming soon)_
-39. `postgrest` _(coming soon)_
+37. [pgRouting](lessons/pgrouting.md): Find the shortest route through a road network in SQL, and see it change when a road closes.
+38. [Foreign data wrappers](lessons/foreign-data-wrappers.md): Query a table in another database as if it were local, join it with your own tables, and let Postgres send the filtering to the other side.
+39. [PostgREST](lessons/postgrest.md): Turn tables into a REST API with no code. Postgres permissions decide what the API allows.
 
 **10. Server-Wide** (shares the whole server)
 

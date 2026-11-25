@@ -42,7 +42,7 @@ Most of those connections sit idle most of the time, between queries. A **connec
 
 PgBouncer has an **admin console**, a pretend database named `pgbouncer`. You connect to it with psql and type commands such as `SHOW POOLS`, `SHOW CONFIG`, or `SET default_pool_size = 10` to change a setting while it runs.
 
-**Where it came from.** PgBouncer was written at Skype in 2007 to serve its huge number of connections, and it's a separate program, not part of Postgres. Postgres itself still has no built-in pooler, so PgBouncer, or a newer one like PgCat or Supavisor, runs in front of most busy Postgres servers.
+**Where it came from.** PgBouncer was written by Marko Kreen at Skype and released in 2007, to serve Skype's huge number of connections, and it's a separate program, not part of Postgres. Postgres itself still has no built-in pooler, so PgBouncer, or a newer one like PgCat or Supavisor, runs in front of most busy Postgres servers.
 
 This lesson starts PgBouncer inside the course container, listening on port 6439. It shares the whole server, so leaving the lesson stops it.
 

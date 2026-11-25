@@ -10,8 +10,8 @@ The bar for every decision is: **would this be obvious to someone who did not bu
 
 ## Current state
 
-- **Phases 1, 2, and 3 are built.** `./pgdemo`, the Go player, the three-pane screen, progress, and every command in [Commands](#commands) work.
-- **27 of 43 lessons are built**: every lesson from the original course, converted to the new format. The 16 new lessons for Phase 4 show as "coming soon".
+- **Phases 1 to 4 are built.** Phase 5, publishing, waits for the owner's approval. `./pgdemo`, the Go player, the three-pane screen, progress, and every command in [Commands](#commands) work.
+- **All 43 lessons are built**: the 27 from the original course, converted, and the 16 new ones. The player still supports "coming soon" for any lesson added to `course.yaml` before its file exists.
 - The original 27-lesson course, run by the old `./demo`, is on `main`. Its scripts were the source for Phase 3 and have been removed from this branch.
 - `tests/course.sh`, `tests/phase1.sh`, and `tests/phase2.sh` pass on PostgreSQL 19.0.
 - Work happens on branch `design/approachable-cli`. The repo has no remote.
@@ -25,7 +25,7 @@ Stop at the end of each phase and hand it to the owner. Do not begin the next ph
 1. **Slice.** _Done._ `./pgdemo`, the three-pane layout, the player, progress, and these 3 lessons: `mvcc-bloat`, `transactional-ddl`, `repack`. All 43 lessons appear in `pgdemo list`, and unbuilt ones show as "coming soon".
 2. **Tools.** _Done._ All remaining commands, help, `doctor`, `browse`, `top`, and `connect`.
 3. **Convert** _Done._ The remaining 24 existing lessons to the new format.
-4. **Add** the 16 new lessons.
+4. **Add** _Done._ The 16 new lessons.
 5. **Publish** to GitHub only after the owner's final approval. This includes the prebuilt image, CI going live, renaming the folder to `pgdemo`, and replacing the placeholder commit author.
 
 ## Architecture
@@ -335,8 +335,9 @@ Only a passed check marks a lesson done.
 - Base image: `postgres:19`, using its Debian packages.
 - Add: tmux, pgcli, pspg, pg-activity, and the player. Build lazysql in a Go build stage at a pinned version (v0.7.0). Build it from source, so no telemetry endpoint is compiled in, and also pass `--no-telemetry` and set `DO_NOT_TRACK=1` and `LAZYSQL_NO_UPDATE_CHECK=1`, so it never contacts the network.
 - Add extensions: `postgresql-19-` plus `cron`, `partman`, `pgvector`, `postgis-3`, `postgis-3-scripts`, `repack`, `squeeze`, `hypopg`, `pg-ivm`, `pgrouting`, `hll`, `pgaudit`, `pgtap`, and the `pgbouncer` package.
-- PostgREST is not in those packages. Add a pinned release in the image for its lesson.
-- River needs a small Go demo program compiled into the image.
+- PostgREST is not in those packages. The image downloads a pinned release (v13.0.8) and checks its SHA-256. Only x86-64 has a static build. ARM uses the Ubuntu build, which is untested.
+- River needs a small Go demo program, `river-demo/`, compiled into the image in its own build stage, since River needs Go 1.26. It retries failed jobs after 2 seconds, so the lesson doesn't wait.
+- curl is installed for the PostgREST lesson.
 - Set the compose project name to `pgdemo`.
 - Keep the whole server on a named Docker volume so playgrounds and progress survive restarts. This replaces the current in-memory `tmpfs`.
 - Publish no ports by default. Only `pgdemo connect` opens one.
@@ -362,6 +363,9 @@ output_plugin_libraries=pgoutput,test_decoding,pg_squeeze
 - **Exclusion constraint error** in `index-toolbox` is intentional.
 - **`REPACK (CONCURRENTLY)`** requires a primary key and cannot run inside a transaction block.
 - **Stray processes crash the server.** Postgres treats an unknown child that dies by signal as a crash and restarts. Without an init process, any orphan in the container is handed to the postmaster. `compose.yaml` sets `init: true`, and `sh` steps that start a background job must `kill` it and `wait` for it.
+- **A background job in an `sh` step can hang the step** if it keeps the step's output open, as `{ ...; sleep 600; } | psql &` does. Redirect the whole background pipeline to `/dev/null`. The player also stops waiting one second after the step's own shell exits.
+- **Some lessons need roles**, which belong to the whole server: `rls_alice`, `rls_bob`, `pgaudit_auditor`, and `web_anon`. Their setup creates them only if they don't exist, and they're named after their lessons.
+- **Postgres 19 replaced `io_workers`** with `io_min_workers` and `io_max_workers`.
 - **A check must fail on a fresh playground.** Lesson 1's original size check passed before any step ran. The course test now requires every check to fail on a fresh playground and before the solution, and to pass after it.
 
 ## Verify these before relying on them
@@ -410,7 +414,7 @@ Then stop, tell the owner how to try it, and wait for feedback.
 `tests/phase2.sh` checks each of these:
 
 1. `pgdemo help` lists every command above, and `pgdemo help check` explains one with an example. No command says it "arrives in the next build".
-2. `pgdemo section` lists the Sections, `pgdemo section 6` says it is coming soon, and `pgdemo section 8` opens its lesson.
+2. `pgdemo section` lists the Sections, `pgdemo section 99` says which Sections exist, and `pgdemo section 8` opens one of its lessons.
 3. The Browse tab runs lazysql on the playground and follows the lesson when the learner presses `n` or `p`.
 4. `pgdemo 1 view`, `pgdemo top`, and `pgdemo browse 2` each open full screen and quit cleanly.
 5. `pgdemo connect 2` opens `127.0.0.1:5439` only, a real client can query through it, and `pgdemo connect off` closes it.

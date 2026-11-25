@@ -316,7 +316,7 @@ func (m *model) leave() {
 func (m *model) nextLesson() tea.Cmd {
 	next := m.course.Next(m.entry)
 	if next == nil {
-		m.msg = "That is the last lesson built so far. More are coming soon. See them with: pgdemo list"
+		m.msg = "That is the last lesson in the course. See your progress with: pgdemo list"
 		m.refresh(false)
 		return nil
 	}

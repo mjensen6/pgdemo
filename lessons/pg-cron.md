@@ -48,7 +48,7 @@ Times are in UTC. `cron.unschedule('name')` removes a job. The tables `cron.job`
 
 **The catch.** A job that fails doesn't tell anyone unless you look at `cron.job_run_details`, so check it, and alert on failures in production. pg_cron also runs jobs only while the server is up. It doesn't catch up on runs it missed.
 
-**Where it came from.** pg_cron is a third-party extension, released by Citus Data in 2016. It isn't part of core Postgres, but most hosted Postgres services offer it, and it's how many teams schedule maintenance today.
+**Where it came from.** pg_cron is a third-party extension, written by Marco Slot and released by Citus Data in 2016. It isn't part of core Postgres, but most hosted Postgres services offer it, and it's how many teams schedule maintenance today.
 
 This lesson shares the whole server, since the jobs live in the `postgres` database. Leaving the lesson removes its jobs.
 

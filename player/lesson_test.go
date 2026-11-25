@@ -1,6 +1,8 @@
 package main
 
 import (
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -58,18 +60,30 @@ func TestIntroBeforeTryIt(t *testing.T) {
 }
 
 func TestPrevSkipsComingSoon(t *testing.T) {
-	c, err := loadCourse("../lessons")
+	// A made-up course where lesson 2 is coming soon (it has no file).
+	dir := t.TempDir()
+	lesson := "---\ntitle: T\ntldr: Short.\n---\n\nStep.\n\n```sql\nSELECT 1;\n```\n\n## Challenge\n\nDo it.\n\nHint: This.\n\n```solution\nSELECT 1;\n```\n\n```check\nSELECT true;\n```\n"
+	files := map[string]string{
+		"course.yaml": "sections:\n  - title: S\n    lessons: [one, two, three]\n",
+		"one.md":      lesson,
+		"three.md":    lesson,
+	}
+	for name, body := range files {
+		if err := os.WriteFile(filepath.Join(dir, name), []byte(body), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	c, err := loadCourse(dir)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if p := c.Prev(c.ByName("mvcc-bloat")); p != nil {
+	if p := c.Prev(c.ByName("one")); p != nil {
 		t.Fatalf("first lesson has a previous lesson: %s", p.Name)
 	}
-	if p := c.Prev(c.ByName("transactional-ddl")); p == nil || p.Name != "mvcc-bloat" {
-		t.Fatalf("Prev(transactional-ddl) = %v, want mvcc-bloat", p)
+	if p := c.Prev(c.ByName("three")); p == nil || p.Name != "one" {
+		t.Fatalf("Prev(three) = %v, want one, skipping the coming-soon two", p)
 	}
-	// pg-ivm, hll, and pg-activity (28-30) are coming soon; Prev must skip them.
-	if p := c.Prev(c.ByName("repack")); p == nil || p.Name != "pg-partman" {
-		t.Fatalf("Prev(repack) = %v, want pg-partman", p)
+	if n := c.Next(c.ByName("one")); n == nil || n.Name != "three" {
+		t.Fatalf("Next(one) = %v, want three", n)
 	}
 }

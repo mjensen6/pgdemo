@@ -90,7 +90,6 @@ click 10 10;  [[ $(focus) == Lesson.0 ]] || fail "clicking the Lesson pane did n
 
 quit
 ./pgdemo list | grep -q "●   1  mvcc-bloat" || fail "pgdemo list does not show lesson 1 as done"
-./pgdemo list | grep -q "coming soon" || fail "pgdemo list does not show unbuilt lessons"
 [[ $(./pgdemo list | grep -cE '^  [○◐●·] +[0-9]+') == 43 ]] || fail "pgdemo list does not show all 43 lessons"
 ok "4. c fails before solving, passes after, and list shows ●"
 
