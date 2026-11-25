@@ -63,16 +63,37 @@ FROM cities a, cities b
 WHERE a.name = 'Chicago' AND b.name <> 'Chicago' ORDER BY miles;
 ```
 
+```expect
+Milwaukee   |    81
+Detroit     |   237
+St. Louis   |   262
+Minneapolis |   355
+New York    |   713
+Denver      |   920
+```
+
 Every city within 300 miles of Chicago, Chicago included. `ST_DWithin` takes the distance in meters.
 
 ```sql
 SELECT name FROM cities WHERE ST_DWithin(geo, 'POINT(-87.63 41.88)', 300 * 1609.34);
 ```
 
+```expect
+Chicago
+Milwaukee
+Detroit
+St. Louis
+(4 rows)
+```
+
 Add a GiST index, so searches like that skip far-away rows instead of measuring each one.
 
 ```sql
 CREATE INDEX cities_geo ON cities USING gist (geo);
+```
+
+```expect
+CREATE INDEX
 ```
 
 ## Challenge

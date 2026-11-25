@@ -49,6 +49,11 @@ EXPLAIN (ANALYZE, COSTS OFF, TIMING OFF, SUMMARY OFF, BUFFERS OFF)
 SELECT count(*) FROM sales WHERE product = 42;
 ```
 
+```expect
+sales_region_product
+Index Searches: 5
+```
+
 Give it both columns, and it's an ordinary lookup: `Index Searches: 1`.
 
 ```sql
@@ -56,10 +61,18 @@ EXPLAIN (ANALYZE, COSTS OFF, TIMING OFF, SUMMARY OFF, BUFFERS OFF)
 SELECT count(*) FROM sales WHERE region = 2 AND product = 42;
 ```
 
+```expect
+Index Searches: 1
+```
+
 Skip scan works because `region` has only 4 distinct values. `n_distinct` is the planner's estimate of how many different values each column has.
 
 ```sql
 SELECT attname AS column, n_distinct FROM pg_stats WHERE tablename = 'sales' ORDER BY attname;
+```
+
+```expect
+region  |          4
 ```
 
 ## Challenge

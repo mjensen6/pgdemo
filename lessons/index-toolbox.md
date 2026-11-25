@@ -56,6 +56,10 @@ CREATE INDEX users_lower ON users (lower(email));
 EXPLAIN (COSTS OFF) SELECT id FROM users WHERE lower(email) = 'user5@mail.com';
 ```
 
+```expect
+users_lower
+```
+
 A BRIN index on `created`, which goes steadily back in time as the table goes on. It covers all 100,000 rows in a few kilobytes.
 
 ```sql
@@ -69,12 +73,22 @@ CREATE INDEX users_trgm ON users USING gin (email gin_trgm_ops);
 EXPLAIN (COSTS OFF) SELECT id FROM users WHERE email LIKE '%er4242@%';
 ```
 
+```expect
+Bitmap Index Scan on users_trgm
+```
+
 Now an exclusion constraint: no two bookings of the same room may overlap in time. `&&` means "overlaps". The first booking goes in. The second overlaps it, so Postgres refuses it with an error. That error is the point.
 
 ```sql
 ALTER TABLE bookings ADD EXCLUDE USING gist (room WITH =, during WITH &&);
 INSERT INTO bookings VALUES (1, '[2030-01-01 09:00, 2030-01-01 10:00)');
 INSERT INTO bookings VALUES (1, '[2030-01-01 09:30, 2030-01-01 11:00)');
+```
+
+```expect
+ALTER TABLE
+INSERT 0 1
+conflicting key value violates exclusion constraint
 ```
 
 ## Challenge

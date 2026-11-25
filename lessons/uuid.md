@@ -49,10 +49,18 @@ Make three of each. The v4 IDs share nothing. The v7 IDs made in the same instan
 SELECT gen_random_uuid() AS v4, uuidv7() AS v7 FROM generate_series(1, 3);
 ```
 
+```expect
+(3 rows)
+```
+
 Because a v7 ID carries its creation time, Postgres can read it back out.
 
 ```sql
 SELECT uuid_extract_timestamp(uuidv7()) AS created_at, now() AS now;
+```
+
+```expect
+created_at
 ```
 
 Insert 200,000 rows into each table. Watch `index_size` in the Live View: the random v4 index ends up noticeably bigger for the same number of rows.
@@ -60,6 +68,11 @@ Insert 200,000 rows into each table. Watch `index_size` in the Live View: the ra
 ```sql
 INSERT INTO ids_v4 (n) SELECT generate_series(1, 200000);
 INSERT INTO ids_v7 (n) SELECT generate_series(1, 200000);
+```
+
+```expect
+INSERT 0 200000
+INSERT 0 200000
 ```
 
 ## Challenge

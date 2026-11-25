@@ -50,6 +50,10 @@ Here's the source: a delivery that adds 10 apples, takes away 2 pears, and bring
 SELECT * FROM delivery;
 ```
 
+```expect
+(3 rows)
+```
+
 Merge the delivery into stock. Apples get updated to 15. Pears drop to 0, so the first rule deletes them. Plums don't match anything, so they're inserted. Watch all three happen at once in the Live View. `RETURNING` shows which action each row got, with the row as it was before a delete.
 
 ```sql
@@ -58,6 +62,12 @@ WHEN MATCHED AND s.qty + d.qty <= 0 THEN DELETE
 WHEN MATCHED THEN UPDATE SET qty = s.qty + d.qty
 WHEN NOT MATCHED THEN INSERT VALUES (d.sku, d.qty)
 RETURNING merge_action(), s.*;
+```
+
+```expect
+UPDATE       | apple |  15
+DELETE       | pear  |   2
+INSERT       | plum  |   7
 ```
 
 ## Challenge

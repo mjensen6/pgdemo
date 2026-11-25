@@ -53,11 +53,23 @@ SELECT title, round((embedding <=> '[1, 0, 0.1]')::numeric, 3) AS distance
 FROM docs ORDER BY embedding <=> '[1, 0, 0.1]' LIMIT 3;
 ```
 
+```expect
+Dog training tips
+Robot pet review
+Cat food guide
+```
+
 Search for "food and tech" instead. Different query, different winners.
 
 ```sql
 SELECT title, round((embedding <=> '[0, 0.7, 0.7]')::numeric, 3) AS distance
 FROM docs ORDER BY embedding <=> '[0, 0.7, 0.7]' LIMIT 3;
+```
+
+```expect
+Baking with Python
+Best pizza dough
+Postgres indexing
 ```
 
 Add an HNSW index for cosine distance. With 6 rows Postgres would rather read the table, so turn sequential scans off for a moment to see the plan use the index.
@@ -67,6 +79,10 @@ CREATE INDEX docs_cosine ON docs USING hnsw (embedding vector_cosine_ops);
 SET enable_seqscan = off;
 EXPLAIN (COSTS OFF) SELECT title FROM docs ORDER BY embedding <=> '[1, 0, 0.1]' LIMIT 3;
 RESET enable_seqscan;
+```
+
+```expect
+Index Scan using docs_cosine
 ```
 
 ## Challenge

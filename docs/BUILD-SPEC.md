@@ -203,6 +203,7 @@ SELECT pg_table_size('t') < 1000000 AND NOT EXISTS (SELECT FROM t WHERE note <> 
 | `Hint:` line | Challenge hint |
 | `solution` | The answer |
 | `check` | Hidden query returning one boolean |
+| `expect` | Optional, right after a step's command. Hidden text its output must contain, line by line, in order. The course test checks it |
 | `cleanup` | Optional. Undoes server-wide effects |
 
 Every lesson needs a `tldr`, a challenge, a hint, a solution, and a check.
@@ -220,6 +221,10 @@ Nothing runs without the learner seeing it first. A step opens with its explanat
 The player shows each step's output in the Lesson pane. The SQL pane stays the learner's own.
 
 All `sql` steps in a lesson must share **one persistent database session**. Lessons rely on this, for example `BEGIN` in one step and `ROLLBACK` in a later one. Use one long-running `psql` process per lesson so output matches what learners see in real Postgres.
+
+### Pins
+
+When a step's text makes a claim about its output, such as which row comes first or that Postgres refuses with an error, pin it with an `expect` block. Pin only the words the claim depends on, never timings, random IDs, or process IDs, so a pin breaks only when the lesson stops telling the truth. The course test fails a lesson whose output no longer matches its pins.
 
 ### Checks
 

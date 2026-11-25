@@ -56,11 +56,22 @@ CREATE SERVER warehouse FOREIGN DATA WRAPPER postgres_fdw OPTIONS (dbname 'fdw_w
 CREATE USER MAPPING FOR CURRENT_USER SERVER warehouse OPTIONS (user 'postgres');
 ```
 
+```expect
+CREATE SERVER
+CREATE USER MAPPING
+```
+
 Import the warehouse's `products` table. It appears in the Live View as a foreign table, and you query it like any other.
 
 ```sql
 IMPORT FOREIGN SCHEMA public LIMIT TO (products) FROM SERVER warehouse INTO public;
 SELECT * FROM products;
+```
+
+```expect
+Lamp
+Tent
+Stove
 ```
 
 Join your local orders with the remote products, to get each order's value.
@@ -70,10 +81,19 @@ SELECT o.id, p.name, o.qty, o.qty * p.price AS value
 FROM orders o JOIN products p ON p.id = o.product_id ORDER BY o.id;
 ```
 
+```expect
+Lamp  |   2 |    60
+(4 rows)
+```
+
 See the pushdown. The plan's `Remote SQL` line shows the query Postgres sends to the warehouse, with the `WHERE` included, so only matching rows come back.
 
 ```sql
 EXPLAIN (VERBOSE, COSTS OFF) SELECT name FROM products WHERE price > 40;
+```
+
+```expect
+Remote SQL: SELECT name FROM public.products WHERE ((price > 40::numeric))
 ```
 
 ## Challenge

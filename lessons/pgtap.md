@@ -66,6 +66,12 @@ SELECT * FROM finish();
 ROLLBACK;
 ```
 
+```expect
+ok 1 - Table products should exist
+ok 2 - ten percent off 100 is 90
+ok 3 - threw 23514
+```
+
 A failing test, to see what that looks like. `not ok` comes with what it got and what it expected.
 
 ```sql
@@ -74,6 +80,12 @@ SELECT plan(1);
 SELECT is(discount(80, 25), 50.00, 'a quarter off 80');
 SELECT * FROM finish();
 ROLLBACK;
+```
+
+```expect
+not ok 1 - a quarter off 80
+have: 60.00
+want: 50.00
 ```
 
 Keep a suite: write the tests in a function and run it with `runtests()`. It appears in the Live View with its result.
@@ -85,6 +97,12 @@ BEGIN
   RETURN NEXT is(discount(100, 0), 100.00, 'no discount');
 END $$;
 SELECT * FROM runtests('^test_discount$');
+```
+
+```expect
+ok 1 - ten percent off
+ok 2 - no discount
+ok 1 - public.test_discount
 ```
 
 ## Challenge

@@ -41,10 +41,18 @@ A very common need is **get or create**: give me the row for tag `postgres`, and
 INSERT INTO tags (name) VALUES ('postgres') ON CONFLICT (name) DO NOTHING RETURNING id, name;
 ```
 
+```expect
+(0 rows)
+```
+
 The `DO UPDATE` workaround does return the row. But in the Live View, `written_by_tx` for `postgres` changes: Postgres wrote a whole new row version just to answer a question.
 
 ```sql
 INSERT INTO tags (name) VALUES ('postgres') ON CONFLICT (name) DO UPDATE SET name = EXCLUDED.name RETURNING id, name;
+```
+
+```expect
+1 | postgres
 ```
 
 `DO SELECT` returns the existing row and writes nothing, so `written_by_tx` stays the same this time.
@@ -53,10 +61,18 @@ INSERT INTO tags (name) VALUES ('postgres') ON CONFLICT (name) DO UPDATE SET nam
 INSERT INTO tags (name) VALUES ('postgres') ON CONFLICT (name) DO SELECT RETURNING id, name;
 ```
 
+```expect
+1 | postgres
+```
+
 For a tag that doesn't exist yet, the same statement creates it and returns the new row. Notice its `id` is 6, not 3: each of the three attempts above took a number from the sequence before it found the conflict. Gaps in IDs are normal and harmless.
 
 ```sql
 INSERT INTO tags (name) VALUES ('mvcc') ON CONFLICT (name) DO SELECT RETURNING id, name;
+```
+
+```expect
+6 | mvcc
 ```
 
 ## Challenge

@@ -59,12 +59,23 @@ psql -c "SELECT id FROM jobs ORDER BY id LIMIT 2 FOR UPDATE SKIP LOCKED"
 wait
 ```
 
+```expect
+Worker B, waiting:
+canceling statement due to lock timeout
+Worker B, with SKIP LOCKED:
+(2 rows)
+```
+
 Now the full pattern from the intro: claim the next job that's not done and mark it done, in one statement. Job 1 turns `done` in the Live View.
 
 ```sql
 UPDATE jobs SET done = true
 WHERE id = (SELECT id FROM jobs WHERE NOT done ORDER BY id LIMIT 1 FOR UPDATE SKIP LOCKED)
 RETURNING id, task;
+```
+
+```expect
+1 | send welcome email
 ```
 
 ## Challenge

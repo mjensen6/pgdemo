@@ -64,10 +64,18 @@ nohup bash /tmp/pgdemo-listener.sh >/dev/null 2>&1 & echo $! > /tmp/pgdemo-liste
 sleep 1; psql -Atc "SELECT 'Listener running: ' || count(*) FROM pg_stat_activity WHERE application_name = 'pgdemo-listener'"
 ```
 
+```expect
+Listener running: 1
+```
+
 Send a message. It appears in the Live View within a moment.
 
 ```sql
 NOTIFY orders, 'hello from the SQL session';
+```
+
+```expect
+NOTIFY
 ```
 
 Notifications wait for commit. The first one is rolled back, so it's never sent. The second is sent only when `COMMIT` runs. Watch the Live View: only the committed message arrives.
@@ -91,6 +99,10 @@ BEGIN
 END $$;
 CREATE TRIGGER orders_announce AFTER INSERT ON orders FOR EACH ROW EXECUTE FUNCTION announce_order();
 INSERT INTO orders (item) VALUES ('lamp'), ('tent');
+```
+
+```expect
+INSERT 0 2
 ```
 
 ## Challenge

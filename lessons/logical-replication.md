@@ -76,6 +76,11 @@ CREATE PUBLICATION pub FOR ALL TABLES, ALL SEQUENCES;
 SELECT slot_name FROM pg_create_logical_replication_slot('sub', 'pgoutput');
 ```
 
+```expect
+CREATE PUBLICATION
+sub
+```
+
 Subscribe from `logical_copy`, in a shell, since it's a different database. The existing note is copied over, and the Live View shows 1 note on each side.
 
 ```sh
@@ -84,16 +89,28 @@ psql -d logical_copy -c "CREATE SUBSCRIPTION sub
   PUBLICATION pub WITH (create_slot = false, slot_name = 'sub')"
 ```
 
+```expect
+CREATE SUBSCRIPTION
+```
+
 Add a note here. It arrives in the copy within a moment. But in the Live View, the copy's `id_sequence` stays behind, because sequences don't sync with every change.
 
 ```sql
 INSERT INTO notes (body) VALUES ('second');
 ```
 
+```expect
+INSERT 0 1
+```
+
 Ask the subscriber to sync its sequences. The copy's `id_sequence` catches up to 2, so if the app switched to the copy now, the next ID would be 3, not a duplicate.
 
 ```sh
 psql -d logical_copy -c "ALTER SUBSCRIPTION sub REFRESH SEQUENCES"
+```
+
+```expect
+ALTER SUBSCRIPTION
 ```
 
 ## Challenge

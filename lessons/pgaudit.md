@@ -64,6 +64,10 @@ INSERT INTO customers VALUES (3, 'Initech');
 SELECT count(*) FROM customers;
 ```
 
+```expect
+AUDIT: SESSION,1,1,WRITE,INSERT
+```
+
 Add reads. Now the `SELECT` is logged too. Then turn session auditing back off.
 
 ```sql
@@ -72,12 +76,20 @@ SELECT count(*) FROM customers;
 RESET pgaudit.log;
 ```
 
+```expect
+AUDIT: SESSION,2,1,READ,SELECT
+```
+
 Object auditing: watch table `customers` by granting the auditor role `SELECT` on it. A read of `customers` now logs an `AUDIT: OBJECT` line naming the table. A read of `salaries` logs nothing, because the auditor doesn't watch it yet. The Live View lists the watched table.
 
 ```sql
 GRANT SELECT ON customers TO pgaudit_auditor;
 SELECT * FROM customers WHERE id = 1;
 SELECT * FROM salaries;
+```
+
+```expect
+AUDIT: OBJECT,3,1,READ,SELECT,TABLE,public.customers
 ```
 
 ## Challenge

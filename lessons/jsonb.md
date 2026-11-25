@@ -52,16 +52,32 @@ Pull fields out of the documents. `->>` returns text, so cast it to compare as a
 SELECT doc->>'name' AS name, (doc->>'price')::int AS price FROM products WHERE (doc->>'price')::int < 100;
 ```
 
+```expect
+Lamp
+Stove
+(2 rows)
+```
+
 Find every product tagged `camping`. `@>` asks whether the document contains this piece of JSON, and the GIN index answers it.
 
 ```sql
 SELECT doc->>'name' AS name FROM products WHERE doc @> '{"tags": ["camping"]}';
 ```
 
+```expect
+Tent
+Stove
+(2 rows)
+```
+
 Change one key in place. Watch the Tent's `price` change in the Live View while its other keys stay.
 
 ```sql
 UPDATE products SET doc = jsonb_set(doc, '{price}', '99') WHERE doc->>'name' = 'Tent';
+```
+
+```expect
+UPDATE 1
 ```
 
 ## Challenge

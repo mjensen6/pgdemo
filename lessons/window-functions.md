@@ -57,6 +57,12 @@ SELECT region, rep, month, amount, sum(amount) OVER (PARTITION BY region) AS reg
 FROM sales WHERE month = '2026-01-01' ORDER BY region, rep;
 ```
 
+```expect
+region_total
+240
+310
+```
+
 Rank reps by their total within their region. The inner query sums per rep with `GROUP BY`. The window then ranks those totals within each region. The outer query keeps only first place, since the inner query can't filter on `rank` itself.
 
 ```sql
@@ -68,6 +74,14 @@ SELECT * FROM (
 WHERE rank = 1;
 ```
 
+```expect
+Ada
+360
+Ed
+330
+(2 rows)
+```
+
 Ada's month by month: a running total with `ORDER BY` in the window, and the change from last month with `lag`.
 
 ```sql
@@ -75,6 +89,14 @@ SELECT month, amount,
        sum(amount) OVER (ORDER BY month) AS running_total,
        amount - lag(amount) OVER (ORDER BY month) AS change
 FROM sales WHERE rep = 'Ada' ORDER BY month;
+```
+
+```expect
+120
+210
+-30
+360
+60
 ```
 
 ## Challenge

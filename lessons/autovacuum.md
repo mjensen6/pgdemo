@@ -67,10 +67,19 @@ SELECT relname, round(vacuum_score::numeric, 2) AS vacuum_score, do_vacuum
 FROM pg_stat_autovacuum_scores WHERE relname IN ('busy', 'calm') ORDER BY 1;
 ```
 
+```expect
+busy    |         2.49 | f
+calm    |         0.05 | f
+```
+
 Turn autovacuum on for `busy`. `due` becomes true. Autovacuum checks once a minute, so within a minute, watch `dead` drop to 0 and `last_autovacuum` fill in. You can carry on meanwhile.
 
 ```sql
 ALTER TABLE busy SET (autovacuum_enabled = true);
+```
+
+```expect
+ALTER TABLE
 ```
 
 ## Challenge

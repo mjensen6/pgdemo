@@ -61,11 +61,21 @@ WHERE dbid = (SELECT oid FROM pg_database WHERE datname = current_database()) AN
 ORDER BY total_exec_time DESC;
 ```
 
+```expect
+SELECT * FROM orders WHERE email = $1
+SELECT * FROM orders WHERE id = $1
+```
+
 Why is it slow? `EXPLAIN` shows it reads the whole table (`Seq Scan`), because there's no index on `email`. The lookup by `id` uses the primary key's index instead.
 
 ```sql
 EXPLAIN (COSTS OFF) SELECT * FROM orders WHERE email = 'user17@example.com';
 EXPLAIN (COSTS OFF) SELECT * FROM orders WHERE id = 17;
+```
+
+```expect
+Seq Scan on orders
+Index Scan using orders_pkey
 ```
 
 Run a few more lookups by email with different values. In the Live View, they're added to the same entry: `calls` goes up and `total_ms` grows.

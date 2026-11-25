@@ -54,16 +54,29 @@ Add a big sale to shop 3. In the Live View, the IMMV changes with the live total
 INSERT INTO sales VALUES (200001, 3, 'product 1', 1000);
 ```
 
+```expect
+INSERT 0 1
+```
+
 Deletes and updates count too. Remove that sale, and the IMMV goes straight back.
 
 ```sql
 DELETE FROM sales WHERE id = 200001;
 ```
 
+```expect
+DELETE 1
+```
+
 Look inside the IMMV. Next to your columns are hidden helper columns, which pg_ivm uses to adjust sums and counts without rereading `sales`.
 
 ```sql
 SELECT * FROM shop_totals WHERE shop = 3;
+```
+
+```expect
+__ivm_count
+260000
 ```
 
 ## Challenge

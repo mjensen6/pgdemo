@@ -72,6 +72,12 @@ SELECT sum(revenue) FROM (SELECT day, sum(amount) AS revenue FROM orders GROUP B
 SELECT sum(revenue) FROM daily_revenue;
 ```
 
+```expect
+Timing is on.
+Time:
+Time:
+```
+
 Add an order. In the Live View, `orders_revenue` goes up and `view_revenue` doesn't: the materialized view is stale.
 
 ```sql
@@ -84,11 +90,20 @@ Refresh it. `view_revenue` catches up.
 REFRESH MATERIALIZED VIEW daily_revenue;
 ```
 
+```expect
+REFRESH MATERIALIZED VIEW
+```
+
 To refresh without blocking readers, the view needs a unique index first. `day` is unique in it, one row per day. Then refresh `CONCURRENTLY`.
 
 ```sql
 CREATE UNIQUE INDEX ON daily_revenue (day);
 REFRESH MATERIALIZED VIEW CONCURRENTLY daily_revenue;
+```
+
+```expect
+CREATE INDEX
+REFRESH MATERIALIZED VIEW
 ```
 
 ## Challenge

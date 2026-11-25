@@ -55,6 +55,10 @@ Look at the raw data: each order is one document, with its items in an array.
 SELECT id, payload FROM orders_raw WHERE id = 1;
 ```
 
+```expect
+"customer": "Ada"
+```
+
 Turn every order's items into rows. Listing `orders_raw o` first and then `JSON_TABLE(o.payload, ...)` runs the JSON_TABLE once for each order.
 
 ```sql
@@ -62,6 +66,11 @@ SELECT o.id, jt.*
 FROM orders_raw o,
      JSON_TABLE(o.payload, '$.items[*]'
        COLUMNS (sku text PATH '$.sku', qty int PATH '$.qty', price numeric PATH '$.price')) jt;
+```
+
+```expect
+stove |   1 |    45
+(5 rows)
 ```
 
 Add the customer to each row. The outer path `'$'` makes one row per order and reads `customer`. `NESTED PATH` then expands the items, repeating the customer on each.
@@ -73,6 +82,12 @@ FROM orders_raw o,
        COLUMNS (customer text PATH '$.customer',
                 NESTED PATH '$.items[*]'
                   COLUMNS (sku text PATH '$.sku', qty int PATH '$.qty', price numeric PATH '$.price'))) jt;
+```
+
+```expect
+Ada      | lamp
+Grace    | rope  |   3 |     8
+(5 rows)
 ```
 
 ## Challenge

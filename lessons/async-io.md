@@ -56,6 +56,11 @@ SELECT buffers_evicted > 0 AS evicted FROM pg_buffercache_evict_relation('big');
 SELECT count(*) FROM big;
 ```
 
+```expect
+500000
+Time:
+```
+
 Same again with read-ahead back on, at the default of 16 reads in flight. Compare the `Time:` of the two `count(*)` lines. It should be faster, by more on slower disks.
 
 ```sql
@@ -64,10 +69,19 @@ SELECT buffers_evicted > 0 AS evicted FROM pg_buffercache_evict_relation('big');
 SELECT count(*) FROM big;
 ```
 
+```expect
+500000
+Time:
+```
+
 `SET` only lasted for this session. To make a setting the default for every new session in this playground, save it on the database. Watch `playground_defaults` in the Live View.
 
 ```sql
 ALTER DATABASE lesson_async_io SET effective_io_concurrency = 0;
+```
+
+```expect
+ALTER DATABASE
 ```
 
 ## Challenge

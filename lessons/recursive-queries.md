@@ -60,6 +60,10 @@ WITH RECURSIVE n AS (
 SELECT i FROM n;
 ```
 
+```expect
+(5 rows)
+```
+
 Everyone under Ada, at every level, with how far down they are. Each round finds the people whose manager was found in the round before.
 
 ```sql
@@ -71,6 +75,11 @@ WITH RECURSIVE org AS (
 SELECT repeat('  ', depth) || name AS chart, depth FROM org ORDER BY depth, name;
 ```
 
+```expect
+Frances |     4
+(10 rows)
+```
+
 Walk upward instead: from Frances to the top, building the chain of managers as a path. This time each round joins on the manager.
 
 ```sql
@@ -80,6 +89,10 @@ WITH RECURSIVE up AS (
   SELECT e.id, e.manager_id, u.path || ' → ' || e.name FROM employees e JOIN up u ON e.id = u.manager_id
 )
 SELECT path FROM up WHERE manager_id IS NULL;
+```
+
+```expect
+Frances → Margaret → Ken → Grace → Ada
 ```
 
 ## Challenge

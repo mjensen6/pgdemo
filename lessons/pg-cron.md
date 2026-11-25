@@ -64,6 +64,11 @@ SELECT cron.schedule_in_database('tick', '1 second', 'INSERT INTO ticks DEFAULT 
 \c lesson_pg_cron
 ```
 
+```expect
+schedule_in_database
+lesson_pg_cron
+```
+
 Wait 3 seconds, then count. A job that's scheduled isn't proof it runs, so always check that it really did.
 
 ```sql
@@ -79,6 +84,12 @@ SELECT status, return_message, start_time::time(0) AS started
 FROM cron.job_run_details ORDER BY start_time DESC LIMIT 3;
 SELECT cron.unschedule('tick');
 \c lesson_pg_cron
+```
+
+```expect
+succeeded
+INSERT 0 1
+unschedule
 ```
 
 ## Challenge

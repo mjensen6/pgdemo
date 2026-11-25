@@ -12,6 +12,10 @@ type Step struct {
 	Text string
 	Lang string // "sql", "sh", or "" for a closing note with no command
 	Code string
+	// Expect lists text the step's output must contain, in this order,
+	// from a hidden ```expect block after its command. The course test
+	// checks it.
+	Expect []string
 }
 
 type Lesson struct {
@@ -87,6 +91,16 @@ func parseLesson(name string, src []byte) (*Lesson, error) {
 				l.Solution = code
 			case "check":
 				l.Check = code
+			case "expect":
+				last := len(l.Steps) - 1
+				if inIntro || inChallenge || last < 0 || l.Steps[last].Lang == "" || strings.TrimSpace(strings.Join(prose, "\n")) != "" {
+					return nil, fail("an ```expect block on line %d must come right after a step's command", i+1)
+				}
+				for _, e := range strings.Split(code, "\n") {
+					if e = strings.TrimSpace(e); e != "" {
+						l.Steps[last].Expect = append(l.Steps[last].Expect, e)
+					}
+				}
 			case "sql", "sh":
 				if inChallenge || inIntro {
 					prose = append(prose, raw...)

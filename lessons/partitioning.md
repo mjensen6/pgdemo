@@ -56,11 +56,20 @@ Try to insert an event from 2026. There's no partition for 2026, so Postgres rej
 INSERT INTO events VALUES ('2026-03-01', 'new year');
 ```
 
+```expect
+no partition of relation "events" found for row
+```
+
 Create the 2026 partition, then insert again. A new row appears in the Live View, and the event lands in `events_2026`.
 
 ```sql
 CREATE TABLE events_2026 PARTITION OF events FOR VALUES FROM ('2026-01-01') TO ('2027-01-01');
 INSERT INTO events VALUES ('2026-03-01', 'new year');
+```
+
+```expect
+CREATE TABLE
+INSERT 0 1
 ```
 
 Query one day. The plan reads only `events_2025`. Postgres pruned the other partitions without looking at them.
@@ -69,10 +78,18 @@ Query one day. The plan reads only `events_2025`. Postgres pruned the other part
 EXPLAIN (COSTS OFF) SELECT count(*) FROM events WHERE at = '2025-06-01';
 ```
 
+```expect
+Seq Scan on events_2025
+```
+
 Throw away all of 2024, about 50,000 rows, by dropping its partition. It's instant, and it leaves no dead rows behind.
 
 ```sql
 DROP TABLE events_2024;
+```
+
+```expect
+DROP TABLE
 ```
 
 ## Challenge

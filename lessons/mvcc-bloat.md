@@ -42,16 +42,28 @@ Update every row in the table. Postgres writes 10,000 new copies and keeps the 1
 UPDATE t SET note = 'world';
 ```
 
+```expect
+UPDATE 10000
+```
+
 VACUUM clears the dead rows. In the Live View, `dead` drops to 0 and `free_pct` jumps to about 50, but `size` stays the same. The space is free inside the file, not given back. That's bloat.
 
 ```sql
 VACUUM t;
 ```
 
+```expect
+VACUUM
+```
+
 Update every row again. This time the new copies fill the free space VACUUM left behind, so `size` barely moves. VACUUM's space gets reused. It just doesn't shrink the file. Actually shrinking it means rebuilding the table, which the REPACK lesson covers later.
 
 ```sql
 UPDATE t SET note = 'again';
+```
+
+```expect
+UPDATE 10000
 ```
 
 ## Challenge

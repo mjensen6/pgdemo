@@ -52,6 +52,10 @@ See what Postgres keeps from a sentence. "The" and "was" are dropped, "runner" a
 SELECT to_tsvector('english', 'The runner was running and ran');
 ```
 
+```expect
+'ran':6 'run':4 'runner':2
+```
+
 Search for "run" and rank the results. Article 1 matches through "Running". Article 2 ("runner") and article 6 ("ran") don't, because they're different lexemes.
 
 ```sql
@@ -60,10 +64,21 @@ FROM articles, websearch_to_tsquery('english', 'run') q
 WHERE search @@ q ORDER BY rank DESC;
 ```
 
+```expect
+Running a database on a home server
+(1 row)
+```
+
 Search the way people type into a search box: `or` between words, and `-` to exclude one. This finds articles about a database or bread, but not sourdough.
 
 ```sql
 SELECT id, body FROM articles WHERE search @@ websearch_to_tsquery('english', 'database or bread -sourdough');
+```
+
+```expect
+Running a database on a home server
+Why the database ran out of disk
+(2 rows)
 ```
 
 ## Challenge

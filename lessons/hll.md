@@ -53,11 +53,21 @@ SELECT count(DISTINCT user_id) AS exact,
 FROM visits;
 ```
 
+```expect
+50000
+48881
+1287
+```
+
 Build the rollup for the first 7 days: one hll per day. Watch the days appear in the Live View, each about a kilobyte.
 
 ```sql
 INSERT INTO daily_uniques
 SELECT day, hll_add_agg(hll_hash_bigint(user_id)) FROM visits WHERE day <= '2026-01-07' GROUP BY day;
+```
+
+```expect
+INSERT 0 7
 ```
 
 Now the problem with exact counts. Adding up each day's unique visitors counts the same people again and again. Combining the hlls doesn't: it estimates the real number of unique visitors for the week.
@@ -66,6 +76,12 @@ Now the problem with exact counts. Adding up each day's unique visitors counts t
 SELECT (SELECT sum(c) FROM (SELECT count(DISTINCT user_id) AS c FROM visits WHERE day <= '2026-01-07' GROUP BY day) d) AS sum_of_daily_counts,
        (SELECT round(hll_cardinality(hll_union_agg(users))) FROM daily_uniques) AS combined_hll,
        (SELECT count(DISTINCT user_id) FROM visits WHERE day <= '2026-01-07') AS exact;
+```
+
+```expect
+280000
+48881
+50000
 ```
 
 ## Challenge

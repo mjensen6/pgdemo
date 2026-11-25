@@ -59,10 +59,21 @@ FROM pgr_dijkstra('SELECT id, source, target, cost, reverse_cost FROM roads', 1,
 JOIN towns t ON t.id = d.node ORDER BY d.seq;
 ```
 
+```expect
+Home
+Mill
+Bridge
+Airport |             25
+```
+
 The road between Mill and Bridge closes. A negative cost removes it from the network, and the Live View shows it closed.
 
 ```sql
 UPDATE roads SET cost = -1, reverse_cost = -1 WHERE id = 2;
+```
+
+```expect
+UPDATE 1
 ```
 
 Ask again. pgRouting routes around the closure, through Market and Station: 27 minutes.
@@ -73,12 +84,24 @@ FROM pgr_dijkstra('SELECT id, source, target, cost, reverse_cost FROM roads', 1,
 JOIN towns t ON t.id = d.node ORDER BY d.seq;
 ```
 
+```expect
+Market  |              7
+Station |             15
+Airport |             27
+```
+
 Everywhere reachable from Home within 15 minutes, with the road still closed.
 
 ```sql
 SELECT t.name AS town, d.agg_cost AS minutes
 FROM pgr_drivingDistance('SELECT id, source, target, cost, reverse_cost FROM roads', 1, 15) d
 JOIN towns t ON t.id = d.node ORDER BY d.agg_cost;
+```
+
+```expect
+Market  |       7
+Mill    |      10
+Station |      15
 ```
 
 ## Challenge

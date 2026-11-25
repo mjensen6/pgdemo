@@ -64,6 +64,10 @@ As a superuser, you see everything. Both users can see everything too: they're a
 SELECT id, owner, title, public FROM documents ORDER BY id;
 ```
 
+```expect
+(4 rows)
+```
+
 Turn on RLS and add a policy: you see your own documents. In the Live View, Alice and Bob now each see only their own.
 
 ```sql
@@ -78,6 +82,13 @@ SET ROLE rls_bob;
 SELECT id, owner, title FROM documents;
 INSERT INTO documents VALUES (9, 'rls_alice', 'Forged by Bob', false);
 RESET ROLE;
+```
+
+```expect
+Bob: budget
+Bob: ideas
+(2 rows)
+new row violates row-level security policy
 ```
 
 ## Challenge

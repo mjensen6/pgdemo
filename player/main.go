@@ -336,6 +336,15 @@ func testLesson(e *Entry, verbose bool) error {
 		if err != nil {
 			return fmt.Errorf("step %d: %v\n%s", i+1, err, out)
 		}
+		// Expected lines must appear in the output in the order given.
+		rest := out
+		for _, want := range st.Expect {
+			at := strings.Index(rest, want)
+			if at < 0 {
+				return fmt.Errorf("step %d's output is missing %q (after the lines before it), which the lesson promises:\n%s", i+1, want, out)
+			}
+			rest = rest[at+len(want):]
+		}
 	}
 	// The Live View runs on its own and nobody would see it fail, so try it here.
 	if l.View != "" {

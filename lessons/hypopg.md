@@ -51,11 +51,21 @@ A lookup by email reads the whole table today. The plan says `Seq Scan`.
 EXPLAIN SELECT * FROM signups WHERE email = 'user42@example.com';
 ```
 
+```expect
+Seq Scan on signups
+```
+
 Create a hypothetical index on `email` and ask again. The plan now uses it, `Index Scan using <...>btree_signups_email`, and its cost drops from thousands to single digits. The Live View still shows no real index.
 
 ```sql
 SELECT * FROM hypopg_create_index('CREATE INDEX ON signups (email)');
 EXPLAIN SELECT * FROM signups WHERE email = 'user42@example.com';
+```
+
+```expect
+btree_signups_email
+Index Scan using
+btree_signups_email
 ```
 
 How big would it be if you built it?
@@ -64,11 +74,19 @@ How big would it be if you built it?
 SELECT index_name, pg_size_pretty(hypopg_relation_size(indexrelid)) AS estimated_size FROM hypopg_list_indexes;
 ```
 
+```expect
+btree_signups_email
+```
+
 `EXPLAIN ANALYZE` runs the query for real, so it can't use an index that doesn't exist. Back to `Seq Scan`. Then clear the hypothetical indexes.
 
 ```sql
 EXPLAIN ANALYZE SELECT * FROM signups WHERE email = 'user42@example.com';
 SELECT hypopg_reset();
+```
+
+```expect
+Seq Scan on signups
 ```
 
 ## Challenge

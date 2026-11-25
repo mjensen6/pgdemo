@@ -87,3 +87,18 @@ func TestPrevSkipsComingSoon(t *testing.T) {
 		t.Fatalf("Next(one) = %v, want three", n)
 	}
 }
+
+func TestExpectAttachesToStep(t *testing.T) {
+	src := "---\ntitle: T\ntldr: Short.\n---\n\n## Try it\n\nFirst.\n\n```sql\nSELECT 1;\n```\n\n```expect\nhello\n\n  world  \n```\n\nSecond.\n\n```sql\nSELECT 2;\n```\n\n## Challenge\n\nDo it.\n\nHint: This.\n\n```solution\nSELECT 1;\n```\n\n```check\nSELECT true;\n```\n"
+	l, err := parseLesson("x", []byte(src))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(l.Steps) != 2 || strings.Join(l.Steps[0].Expect, "|") != "hello|world" || l.Steps[1].Expect != nil {
+		t.Fatalf("expect lines landed wrong: %+v", l.Steps)
+	}
+	bad := strings.Replace(src, "First.\n\n```sql\nSELECT 1;\n```\n\n```expect", "```expect", 1)
+	if _, err := parseLesson("x", []byte(bad)); err == nil {
+		t.Fatal("an expect block before any step should be refused")
+	}
+}

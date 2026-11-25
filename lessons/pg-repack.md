@@ -54,16 +54,28 @@ Table `t` holds 10,000 rows but takes the space of 100,000.
 SELECT pg_size_pretty(pg_table_size('t')) AS size, count(*) AS rows FROM t;
 ```
 
+```expect
+14 MB | 10000
+```
+
 Rebuild it with the `pg_repack` program. `-d` names the database and `-t` the table. Watch `size` for `t` drop in the Live View.
 
 ```sh
 pg_repack -d lesson_pg_repack -t t
 ```
 
+```expect
+repacking table "public.t"
+```
+
 It's back to its real size, with every row still there.
 
 ```sql
 SELECT pg_size_pretty(pg_table_size('t')) AS size, count(*) AS rows FROM t;
+```
+
+```expect
+| 10000
 ```
 
 ## Challenge

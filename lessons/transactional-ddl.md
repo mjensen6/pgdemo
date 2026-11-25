@@ -47,6 +47,12 @@ CREATE TABLE oops (id int);
 SELECT * FROM users;
 ```
 
+```expect
+ALTER TABLE
+CREATE TABLE
+(1 row)
+```
+
 Changed your mind? `ROLLBACK` undoes schema changes too. The column and its data come back, and table `oops` never existed. `to_regclass` looks a table up by name and returns nothing when it doesn't exist.
 
 ```sql
@@ -55,12 +61,21 @@ SELECT * FROM users;
 SELECT to_regclass('oops') AS oops_table;
 ```
 
+```expect
+1 | Ada
+```
+
 Some commands refuse to run inside a transaction. `VACUUM` is one of them, so Postgres stops it with an error and changes nothing. After an error the transaction is aborted, so `ROLLBACK` ends it.
 
 ```sql
 BEGIN;
 VACUUM users;
 ROLLBACK;
+```
+
+```expect
+VACUUM cannot run inside a transaction block
+ROLLBACK
 ```
 
 ## Challenge

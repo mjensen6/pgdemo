@@ -150,7 +150,7 @@ Your progress is in the `progress` table of the `pgdemo` database, so you can qu
 Each lesson is one Markdown file, `lessons/<name>.md`, and `lessons/course.yaml` sets the order. See [`lessons/mvcc-bloat.md`](lessons/mvcc-bloat.md) for the format and [`docs/BUILD-SPEC.md`](docs/BUILD-SPEC.md) for the full design. Lessons are read from your checkout, so edits show up without a rebuild.
 
 ```bash
-./tests/course.sh -v    # play every lesson and require its check to pass
+./tests/course.sh -v    # play every lesson: pins, Live View, and check must all pass
 ./tests/phase1.sh       # drive the real interface through tmux, from a clean start
 ./tests/phase2.sh       # test the tools through tmux (keeps your progress)
 ./scripts/readme        # regenerate the lesson list above

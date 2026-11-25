@@ -46,6 +46,10 @@ Table `t` holds 10,000 rows but takes the space of 100,000.
 SELECT pg_size_pretty(pg_table_size('t')) AS size, count(*) AS rows FROM t;
 ```
 
+```expect
+14 MB | 10000
+```
+
 Squeeze it. Watch its `size` drop in the Live View.
 
 ```sql
@@ -56,6 +60,10 @@ It's back to its real size, with every row still there.
 
 ```sql
 SELECT pg_size_pretty(pg_table_size('t')) AS size, count(*) AS rows FROM t;
+```
+
+```expect
+| 10000
 ```
 
 ## Challenge

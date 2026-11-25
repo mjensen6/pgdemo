@@ -76,11 +76,20 @@ sleep 2
 curl -s localhost:3000/todos; echo
 ```
 
+```expect
+"task":"buy milk"
+```
+
 Filter in the URL: only todos not done, only the `task` column. Then sort newest first and take two.
 
 ```sh
 curl -s "localhost:3000/todos?done=is.false&select=task"; echo
 curl -s "localhost:3000/todos?order=id.desc&limit=2"; echo
+```
+
+```expect
+[{"task":"learn postgres"}
+"id":3
 ```
 
 Try to add a todo with `POST`. `web_anon` may only read, so Postgres refuses, and PostgREST passes on its error: `permission denied for table todos`.
@@ -89,12 +98,20 @@ Try to add a todo with `POST`. `web_anon` may only read, so Postgres refuses, an
 curl -s -X POST localhost:3000/todos -H 'Content-Type: application/json' -d '{"task": "write docs"}'; echo
 ```
 
+```expect
+permission denied for table todos
+```
+
 Let anonymous users add todos: grant `INSERT`, and use of the sequence that numbers them. The same `POST` now works, and the new todo appears in the Live View.
 
 ```sql
 GRANT INSERT ON api.todos TO web_anon;
 GRANT USAGE ON SEQUENCE api.todos_id_seq TO web_anon;
 \! curl -s -X POST localhost:3000/todos -H 'Content-Type: application/json' -d '{"task": "write docs"}' -w 'HTTP %{http_code}\n'
+```
+
+```expect
+HTTP 201
 ```
 
 ## Challenge

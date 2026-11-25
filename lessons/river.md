@@ -50,16 +50,33 @@ Enqueue 5 email jobs with the demo app. They appear in the Live View as `availab
 river-demo -d lesson_river enqueue 5
 ```
 
+```expect
+enqueued job 1
+enqueued job 2: send email to flaky@example.com
+enqueued job 5
+```
+
 Each job is an ordinary row. Its arguments are JSON, and `kind` tells River which worker runs it.
 
 ```sql
 SELECT id, kind, args, state, max_attempts FROM river_job ORDER BY id;
 ```
 
+```expect
+send_email
+available
+(5 rows)
+```
+
 Run 3 workers for 6 seconds. The jobs go to `completed`, except job 2, which fails first and shows `retryable` with its error. A moment later River retries it, and it completes on attempt 2.
 
 ```sh
 river-demo -d lesson_river work 6
+```
+
+```expect
+job 2 to flaky@example.com failed on attempt 1, River will retry it
+job 2 sent email to flaky@example.com (attempt 2)
 ```
 
 Enqueue from SQL, inside your own transaction. Insert a user and their welcome-email job together, then roll back. Neither the user nor the job exists afterwards. No email for an account that was never created.
@@ -70,6 +87,11 @@ INSERT INTO users (email) VALUES ('grace@example.com');
 INSERT INTO river_job (kind, args) VALUES ('send_email', '{"to": "grace@example.com"}');
 ROLLBACK;
 SELECT count(*) AS jobs_for_grace FROM river_job WHERE args->>'to' = 'grace@example.com';
+```
+
+```expect
+ROLLBACK
+jobs_for_grace
 ```
 
 ## Challenge

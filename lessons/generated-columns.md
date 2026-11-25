@@ -57,10 +57,18 @@ Change the quantity. In the Live View, `total` and `taxed` both follow at once, 
 UPDATE line_items SET qty = 5;
 ```
 
+```expect
+UPDATE 1
+```
+
 Try to set `total` by hand. Postgres refuses, because a generated column only ever holds its formula's result.
 
 ```sql
 UPDATE line_items SET total = 100;
+```
+
+```expect
+column "total" can only be updated to DEFAULT
 ```
 
 Add a row. You only give `price` and `qty`. The generated columns fill themselves in.
@@ -68,6 +76,11 @@ Add a row. You only give `price` and `qty`. The generated columns fill themselve
 ```sql
 INSERT INTO line_items (price, qty) VALUES (4, 2);
 SELECT * FROM line_items;
+```
+
+```expect
+50 | 54.00
+8 |  8.64
 ```
 
 ## Challenge

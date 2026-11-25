@@ -66,6 +66,10 @@ PGAPPNAME=slow-report nohup psql -c "SELECT pg_sleep(600) AS report" >/dev/null 
 sleep 0.5; echo "The slow report is running."
 ```
 
+```expect
+The slow report is running.
+```
+
 Cancel it. The query stops, and the session goes `idle` but stays connected.
 
 ```sql
@@ -83,11 +87,20 @@ PGAPPNAME=checkout nohup psql -c "UPDATE accounts SET balance = balance - 10 WHE
 sleep 0.5; echo "The checkout is waiting."
 ```
 
+```expect
+The checkout is waiting.
+```
+
 Find who's blocked, and by whom, the way you would on a real server. Then have a look at the **Top** tab at the bottom of the screen, and click **Lesson** to come back.
 
 ```sql
 SELECT pid, application_name, state, pg_blocking_pids(pid) AS blocked_by
 FROM pg_stat_activity WHERE cardinality(pg_blocking_pids(pid)) > 0;
+```
+
+```expect
+checkout
+active
 ```
 
 ## Challenge

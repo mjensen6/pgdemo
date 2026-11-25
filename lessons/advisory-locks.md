@@ -57,16 +57,29 @@ wait
 echo "Worker A finished, and disconnecting released its lock."
 ```
 
+```expect
+Worker B: someone else is making the report, skipping
+Worker A finished
+```
+
 Take a session-level lock in the lesson's own session. It shows in the Live View as held by `psql`, and stays until you unlock it.
 
 ```sql
 SELECT pg_advisory_lock(7);
 ```
 
+```expect
+pg_advisory_lock
+```
+
 Release it, and it's gone from the Live View.
 
 ```sql
 SELECT pg_advisory_unlock(7);
+```
+
+```expect
+t
 ```
 
 A transaction-level lock needs no unlock. It appears during the transaction and disappears at `COMMIT`.
@@ -76,6 +89,11 @@ BEGIN;
 SELECT pg_advisory_xact_lock(99);
 SELECT objid FROM pg_locks WHERE locktype = 'advisory';
 COMMIT;
+```
+
+```expect
+99
+COMMIT
 ```
 
 ## Challenge

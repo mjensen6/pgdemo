@@ -53,6 +53,12 @@ Look at the settings for `metrics`. It keeps 2 partitions ready ahead of now, an
 SELECT parent_table, partition_interval, premake, retention, retention_keep_table FROM partman.part_config;
 ```
 
+```expect
+public.metrics
+1 mon
+2
+```
+
 Keep 4 months ready instead of 2, then run maintenance. More future partitions appear at the bottom of the Live View, with 0 rows waiting for their month.
 
 ```sql
@@ -60,11 +66,21 @@ UPDATE partman.part_config SET premake = 4 WHERE parent_table = 'public.metrics'
 CALL partman.run_maintenance_proc();
 ```
 
+```expect
+UPDATE 1
+CALL
+```
+
 Keep only 3 months of history and drop anything older. After maintenance, the oldest partitions disappear from the top of the Live View, data and all.
 
 ```sql
 UPDATE partman.part_config SET retention = '3 months', retention_keep_table = false WHERE parent_table = 'public.metrics';
 CALL partman.run_maintenance_proc();
+```
+
+```expect
+UPDATE 1
+CALL
 ```
 
 ## Challenge

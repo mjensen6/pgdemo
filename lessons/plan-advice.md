@@ -48,11 +48,23 @@ Ask for the plan as advice. For a few rows of `a`, the planner chooses a nested 
 EXPLAIN (COSTS OFF, PLAN_ADVICE) SELECT * FROM a JOIN b ON a.id = b.id WHERE a.id < 10;
 ```
 
+```expect
+Nested Loop
+NESTED_LOOP_PLAIN(b)
+INDEX_ONLY_SCAN(b public.b_id)
+```
+
 Now advise a hash join with a full scan of `b`. The plan changes, and both pieces say `matched`.
 
 ```sql
 SET pg_plan_advice.advice = 'HASH_JOIN(b) SEQ_SCAN(b)';
 EXPLAIN (COSTS OFF) SELECT * FROM a JOIN b ON a.id = b.id WHERE a.id < 10;
+```
+
+```expect
+Hash Join
+SEQ_SCAN(b) /* matched */
+HASH_JOIN(b) /* matched */
 ```
 
 Advice that doesn't fit the query is ignored, and EXPLAIN says so. There's no table `x` here, so this is `not matched`, and the planner goes back to its own choice.
@@ -61,6 +73,11 @@ Advice that doesn't fit the query is ignored, and EXPLAIN says so. There's no ta
 SET pg_plan_advice.advice = 'HASH_JOIN(x)';
 EXPLAIN (COSTS OFF) SELECT * FROM a JOIN b ON a.id = b.id WHERE a.id < 10;
 RESET pg_plan_advice.advice;
+```
+
+```expect
+Nested Loop
+HASH_JOIN(x) /* not matched */
 ```
 
 ## Challenge

@@ -60,10 +60,18 @@ pg_basebackup -D full -c fast
 echo "Full backup done."
 ```
 
+```expect
+Full backup done.
+```
+
 Change a little data: add one row.
 
 ```sql
 INSERT INTO t VALUES (999999, 'added after the full backup');
+```
+
+```expect
+INSERT 0 1
 ```
 
 Take an incremental backup, based on the full one. It lands next to it in the Live View, and it's a small fraction of the size. `pg_switch_wal()` closes the current WAL file, so the summary covers the new row straight away.
@@ -75,12 +83,20 @@ pg_basebackup -D incr -c fast --incremental=full/backup_manifest
 echo "Incremental backup done."
 ```
 
+```expect
+Incremental backup done.
+```
+
 Combine the two into one complete backup, then verify it. `restored` is a normal full backup you could start a server from.
 
 ```sh
 cd /var/lib/postgresql/pgdemo-backups
 pg_combinebackup full incr -o restored
 pg_verifybackup -n restored
+```
+
+```expect
+backup successfully verified
 ```
 
 ## Challenge

@@ -52,6 +52,10 @@ Table `t` once held 200,000 rows. 90% were deleted and vacuumed, but the file ke
 SELECT pg_size_pretty(pg_table_size('t')) AS size, count(*) AS rows FROM t;
 ```
 
+```expect
+27 MB | 20000
+```
+
 Now a pretend app updates row 10 every 20 ms while `REPACK (CONCURRENTLY)` rebuilds the table. In the Live View, watch `writes_landed` keep climbing during the rebuild. The app is never locked out. The step prints the write count before and after, so you can see writes landed during the rebuild.
 
 ```sh
@@ -63,10 +67,20 @@ sleep 1; kill $!; wait $! 2>/dev/null
 psql -Atc "SELECT 'writes so far: ' || n FROM t WHERE id = 10"
 ```
 
+```expect
+writes so far:
+REPACK
+writes so far:
+```
+
 The table is back to its real size, about a tenth of what it was, and no rows or writes were lost. `t_size` in the Live View dropped the same way.
 
 ```sql
 SELECT pg_size_pretty(pg_table_size('t')) AS size, count(*) AS rows FROM t;
+```
+
+```expect
+| 20000
 ```
 
 ## Challenge

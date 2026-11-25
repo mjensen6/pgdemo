@@ -74,6 +74,10 @@ pgbouncer -d $d/pgbouncer.ini && sleep 0.5
 psql -h 127.0.0.1 -p 6439 -d lesson_pgbouncer -Atc "SELECT 'Connected through PgBouncer'"
 ```
 
+```expect
+Connected through PgBouncer
+```
+
 Now 40 clients hammer the playground through PgBouncer for 5 seconds, using pgbench, Postgres's benchmarking tool. Halfway through, the step asks PgBouncer's admin console how the pool looks: many clients (`cl_active`, `cl_waiting`), only 3 real connections (`sv_active`). Watch `pgbench` in the Live View: it never goes above 3.
 
 ```sh
@@ -81,6 +85,13 @@ pgbench -h 127.0.0.1 -p 6439 -n -c 40 -T 5 -f <(echo 'SELECT count(*) FROM t;') 
 sleep 2.5
 psql -h 127.0.0.1 -p 6439 -d pgbouncer --csv -c "SHOW POOLS" | cut -d, -f1,3,4,7,16
 wait
+```
+
+```expect
+database,cl_active,cl_waiting,sv_active,pool_mode
+lesson_pgbouncer,
+,3,transaction
+number of clients: 40
 ```
 
 ## Challenge
