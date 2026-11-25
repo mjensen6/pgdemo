@@ -23,6 +23,8 @@ Postgres never changes a row in place. An `UPDATE` writes a brand-new copy of th
 
 VACUUM marks the space as free for new rows to reuse, but it almost never hands the space back to the operating system. A table that once grew stays big. That leftover empty space is called **bloat**.
 
+**Where it came from.** MVCC arrived in Postgres 6.5 (1999). Before that, readers and writers had to wait on each other's locks. VACUUM is older still, from the Berkeley POSTGRES project that Postgres grew out of. Autovacuum started as an add-on: the `pg_autovacuum` contrib module in Postgres 7.4 (2003). So many people ran it that it was built into the server in 8.1 (2005) and switched on by default in 8.3 (2008).
+
 **The Live View** watches table `t`, which starts with 10,000 rows:
 
 | Column | Meaning |
@@ -46,7 +48,7 @@ VACUUM clears the dead rows. In the Live View, `dead` drops to 0 and `free_pct` 
 VACUUM t;
 ```
 
-Update every row again. This time the new copies fill the free space VACUUM left behind, so `size` barely moves. VACUUM's space gets reused. It just doesn't shrink the file.
+Update every row again. This time the new copies fill the free space VACUUM left behind, so `size` barely moves. VACUUM's space gets reused. It just doesn't shrink the file. Actually shrinking it means rebuilding the table, which the REPACK lesson covers later.
 
 ```sql
 UPDATE t SET note = 'again';
@@ -54,15 +56,16 @@ UPDATE t SET note = 'again';
 
 ## Challenge
 
-Shrink table `t` back down to its original size.
+Set every row's `note` to `'done'` without making table `t` any bigger than it is now (912 kB).
 
-Hint: There's a command new in Postgres 19 that rebuilds a table.
+Hint: The last update filled the free space and left 10,000 new dead rows, so there's no room left. What gave you free space before?
 
 ```solution
-REPACK t;
+VACUUM t;
+UPDATE t SET note = 'done';
 ```
 
 ```check
--- Shrunk after the updates, not just untouched since setup.
-SELECT pg_table_size('t') < 600000 AND NOT EXISTS (SELECT FROM t WHERE note = 'hello');
+-- 912 kB if VACUUM ran first, about 1.3 MB if it didn't.
+SELECT pg_table_size('t') < 1000000 AND NOT EXISTS (SELECT FROM t WHERE note <> 'done');
 ```

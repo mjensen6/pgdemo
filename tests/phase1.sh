@@ -41,7 +41,7 @@ quit() {
 }
 trap '$T kill-server 2>/dev/null || true' EXIT
 
-if [[ ${1:-} == --rebuild ]]; then docker compose down -v --rmi local; else docker compose down -v; fi
+if [[ ${1:-} == --rebuild ]]; then docker compose down -v --rmi all; else docker compose down -v; fi
 rm -rf .pgdemo && mkdir -p .pgdemo && touch .pgdemo/path-asked  # leave the tester's PATH alone
 
 # 1. Builds, starts, and opens lesson 1 in three panes with no manual steps.
@@ -74,8 +74,10 @@ key Enter; wait_for "UPDATE t SET note = 'again'"
 key Enter; wait_for "That was the last step."
 key Enter; wait_for "Your turn."
 key c; wait_for "Not yet."
-type_sql "REPACK t;"
-wait_for "REPACK"
+type_sql "VACUUM t;"
+wait_for "VACUUM"
+type_sql "UPDATE t SET note = 'done';"
+for _ in {1..40}; do $IN capture-pane -p -t pgdemo:Lesson.1 | grep -qF "UPDATE 10000" && break; sleep 0.25; done
 key c; wait_for "● Done!"
 ok "3. the SQL pane is connected and takes the challenge"
 
@@ -95,7 +97,7 @@ ok "4. c fails before solving, passes after, and list shows ●"
 # 8. Running pgdemo again restores progress and the playground.
 launch
 wait_for "Lesson 2: Transactional DDL" 120
-./pgdemo 1 check | grep -qF "is done" || fail "lesson 1's playground lost the learner's REPACK"
+./pgdemo 1 check | grep -qF "is done" || fail "lesson 1's playground lost the learner's work"
 ok "8. q stops and resumes, keeping progress and the playground"
 
 # 5. One session across steps, so ROLLBACK works.

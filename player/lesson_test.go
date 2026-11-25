@@ -55,3 +55,20 @@ func TestIntroBeforeTryIt(t *testing.T) {
 		t.Fatalf("an example in the intro must not become a step: %+v", l.Steps)
 	}
 }
+
+func TestPrevSkipsComingSoon(t *testing.T) {
+	c, err := loadCourse("../lessons")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if p := c.Prev(c.ByName("mvcc-bloat")); p != nil {
+		t.Fatalf("first lesson has a previous lesson: %s", p.Name)
+	}
+	if p := c.Prev(c.ByName("transactional-ddl")); p == nil || p.Name != "mvcc-bloat" {
+		t.Fatalf("Prev(transactional-ddl) = %v, want mvcc-bloat", p)
+	}
+	// repack sits after many coming-soon lessons; Prev must skip them.
+	if p := c.Prev(c.ByName("repack")); p == nil || p.Name != "transactional-ddl" {
+		t.Fatalf("Prev(repack) = %v, want transactional-ddl", p)
+	}
+}

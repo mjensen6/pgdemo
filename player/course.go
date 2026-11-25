@@ -113,6 +113,16 @@ func (c *Course) Next(e *Entry) *Entry {
 	return nil
 }
 
+// Prev returns the nearest lesson before e that is ready to play, or nil.
+func (c *Course) Prev(e *Entry) *Entry {
+	for i := e.Num - 2; i >= 0; i-- {
+		if c.Entries[i].Lesson != nil {
+			return c.Entries[i]
+		}
+	}
+	return nil
+}
+
 func (c *Course) First() *Entry {
 	for _, e := range c.Entries {
 		if e.Lesson != nil {
