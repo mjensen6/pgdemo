@@ -12,10 +12,10 @@ The bar for every decision is: **would this be obvious to someone who did not bu
 
 - **Phases 1 to 4 are built.** Phase 5, publishing, waits for the owner's approval. `./pgdemo`, the Go player, the three-pane screen, progress, and every command in [Commands](#commands) work.
 - **All 43 lessons are built**: the 27 from the original course, converted, and the 16 new ones. The player still supports "coming soon" for any lesson added to `course.yaml` before its file exists.
-- The original 27-lesson course, run by the old `./demo`, is on `main`. Its scripts were the source for Phase 3 and have been removed from this branch.
+- The original course's scripts were the source for Phase 3, and have been removed. They're still in `main`'s history.
 - `tests/course.sh`, `tests/phase1.sh`, and `tests/phase2.sh` pass on PostgreSQL 19.0.
-- Work happens on branch `design/approachable-cli`. The repo has no remote.
-- `main` holds the original course. Do not merge, push, or publish without the owner's approval.
+- The repo is public at https://github.com/mjensen6/pgdemo. The course was built on branch `design/approachable-cli` and merged into `main` with the owner's approval.
+- The original 27-lesson course is the first commit on `main`, `Add 27-lesson PostgreSQL 19 feature course`.
 - The owner may have the old container `postgres-demo-db-1` running. Leave it alone. The new compose project is named `pgdemo`, so the two do not collide.
 
 ## Build order
@@ -26,7 +26,7 @@ Stop at the end of each phase and hand it to the owner. Do not begin the next ph
 2. **Tools.** _Done._ All remaining commands, help, `doctor`, `browse`, `top`, and `connect`.
 3. **Convert** _Done._ The remaining 24 existing lessons to the new format.
 4. **Add** _Done._ The 16 new lessons.
-5. **Publish** to GitHub only after the owner's final approval. This includes the prebuilt image, CI going live, renaming the folder to `pgdemo`, and replacing the placeholder commit author.
+5. **Publish** to GitHub only after the owner's final approval. _Partly done._ The repo is public, CI is live, and commits are authored by the owner's GitHub no-reply address. Still to do: the prebuilt image, which the owner chose to leave for later, and renaming the local folder to `pgdemo`.
 
 ## Architecture
 
@@ -429,6 +429,6 @@ Then stop, tell the owner how to try it, and wait for feedback.
 ## Repo and publishing rules
 
 - Project, command, and image name: `pgdemo`. License: MIT.
-- Commit on the feature branch only. Do not push, publish, or open a public repo until the owner approves.
-- The owner's personal email must never appear in commits. Commits currently use the placeholder author `postgres-demo <postgres-demo@users.noreply.github.com>`. Ask for the GitHub identity at Phase 5.
+- Work on a branch and open a pull request. Ask the owner before pushing to `main` or publishing anything new, such as the prebuilt image.
+- The owner's personal email must never appear in commits. Commits use the owner's GitHub no-reply address, `mjensen6 <64800027+mjensen6@users.noreply.github.com>`, set in this repo's git config.
 - Keep `GLOSSARY.md` up to date when a term changes.

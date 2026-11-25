@@ -7,7 +7,7 @@ All you need is Docker. Everything else, including Postgres, runs inside the cou
 ## Start
 
 ```bash
-git clone <this repo> pgdemo
+git clone https://github.com/mjensen6/pgdemo.git
 cd pgdemo
 ./pgdemo
 ```
