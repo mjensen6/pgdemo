@@ -26,7 +26,7 @@ Stop at the end of each phase and hand it to the owner. Do not begin the next ph
 2. **Tools.** _Done._ All remaining commands, help, `doctor`, `browse`, `top`, and `connect`.
 3. **Convert** _Done._ The remaining 24 existing lessons to the new format.
 4. **Add** _Done._ The 16 new lessons.
-5. **Publish** to GitHub only after the owner's final approval. _Partly done._ The repo is public, CI is live, and commits are authored by the owner's GitHub no-reply address. Still to do: the prebuilt image, which the owner chose to leave for later, and renaming the local folder to `pgdemo`.
+5. **Publish** to GitHub only after the owner's final approval. _Done._ The repo is public, CI is live and publishes the prebuilt image, commits are authored by the owner's GitHub no-reply address, and the folder is named `pgdemo`.
 
 ## Architecture
 
@@ -54,7 +54,7 @@ Plain `pgdemo` runs `setup` automatically when needed, so a newcomer never has t
 1. Check Docker is installed. If not, show the right install command for the OS and offer to run it after confirmation.
 2. Check the Docker daemon is running and the user can reach it.
 3. Handle a stale Docker group. If the account is in the `docker` group but the current shell is not, run Docker through `sg docker -c ...` and explain in one plain sentence. This really happened: long-lived desktop and tmux sessions keep their old groups even after being added.
-4. Pull the prebuilt image, falling back to a local build if the pull fails. Until Phase 5, always build locally.
+4. Pull the prebuilt image for this exact code, falling back to a local build if there isn't one. `PGDEMO_BUILD=1` always builds locally.
 5. Ask once whether to add `pgdemo` to PATH, by linking it into `~/.local/bin`. Never change PATH silently.
 6. Open the first lesson on its **Course Overview** page, which explains the Lesson pane, SQL pane, Live View, and tabs inside the real screen. Its text lives in `lessons/overview.md`.
 
@@ -338,6 +338,7 @@ Only a passed check marks a lesson done.
 ## Docker
 
 - Base image: `postgres:19`, using its Debian packages.
+- **The prebuilt image.** CI tests on x86-64 and ARM runners. On a push to `main`, each runner publishes the exact image it tested to `ghcr.io/mjensen6/pgdemo:src-<hash>-<arch>`, and a final job joins them into `ghcr.io/mjensen6/pgdemo:src-<hash>` and `:latest`. `<hash>` comes from `scripts/source-hash`, over everything built into the image: the Dockerfile, the player, and the River demo. The launcher computes the same hash, so a checkout pulls only the image built from its own code, and builds locally when there's none. Lessons aren't in the hash, since they're read from the checkout at run time.
 - Add: tmux, pgcli, pspg, pg-activity, and the player. Build lazysql in a Go build stage at a pinned version (v0.7.0). Build it from source, so no telemetry endpoint is compiled in, and also pass `--no-telemetry` and set `DO_NOT_TRACK=1` and `LAZYSQL_NO_UPDATE_CHECK=1`, so it never contacts the network.
 - Add extensions: `postgresql-19-` plus `cron`, `partman`, `pgvector`, `postgis-3`, `postgis-3-scripts`, `repack`, `squeeze`, `hypopg`, `pg-ivm`, `pgrouting`, `hll`, `pgaudit`, `pgtap`, and the `pgbouncer` package.
 - PostgREST is not in those packages. The image downloads a pinned release (v13.0.8) and checks its SHA-256. Only x86-64 has a static build. ARM uses the Ubuntu build, which is untested.

@@ -42,6 +42,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates
  && tar -xJf /tmp/postgrest.tar.xz -C /usr/local/bin postgrest
 
 FROM postgres:19
+LABEL org.opencontainers.image.source="https://github.com/mjensen6/pgdemo" \
+      org.opencontainers.image.description="pgdemo: learn modern PostgreSQL 19 in your terminal" \
+      org.opencontainers.image.licenses="MIT"
 RUN apt-get update && apt-get install -y --no-install-recommends \
     tmux ncurses-term pgcli pspg pg-activity curl libgmp10 \
     postgresql-19-cron postgresql-19-partman postgresql-19-pgvector \

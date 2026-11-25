@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# Prints the hash of everything built into the course image. The launcher
+# uses it to tell when the image is out of date, and CI tags each published
+# image with it, so a checkout always pulls the image built from its code.
+# Lessons aren't included: they're read from the checkout at run time.
+set -euo pipefail
+cd "$(dirname "$0")/.."
+export LC_ALL=C   # the same file order on every machine
+cat Dockerfile player/go.mod player/go.sum player/*.go \
+    river-demo/go.mod river-demo/go.sum river-demo/*.go | cksum | cut -d' ' -f1
