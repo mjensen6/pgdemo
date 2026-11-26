@@ -225,6 +225,11 @@ func (m *model) key(k tea.KeyMsg) (tea.Model, tea.Cmd) {
 		var cmd tea.Cmd
 		m.vp, cmd = m.vp.Update(k)
 		return m, cmd
+	case "f":
+		// Zoom this pane to fill the window, or put the three panes back.
+		// tmux resizes the pane, and Bubble Tea redraws on the resize.
+		tmux("resize-pane", "-Z", "-t", tmuxSession+":Lesson.0")
+		return m, nil
 	case "ctrl+c":
 		m.confirm = "quit"
 		m.refresh(false)
@@ -487,7 +492,7 @@ func (m *model) View() string {
 		enter = "run"
 	}
 	keys1 := strings.Join([]string{k("Enter", enter), k("b", "back"), k("r", "reset"), k("c", "check"), k("h", "hint"), k("s", "skip")}, "  ")
-	keys2 := strings.Join([]string{k("p", "prev lesson"), k("n", "next lesson"), k("?", "help"), k("q", "quit")}, "  ")
+	keys2 := strings.Join([]string{k("p", "prev lesson"), k("n", "next lesson"), k("f", "full screen"), k("?", "help"), k("q", "quit")}, "  ")
 	status := m.msg
 	if status == "" {
 		status = m.nextHint()
@@ -536,7 +541,7 @@ const helpText = "## Keys\n\n" +
 	"| Key | Action |\n|---|---|\n" +
 	"| Enter | Run the step on screen, then move to the next one. On the challenge, check it |\n" +
 	"| b | Back one step |\n| r | Reset the lesson: rebuild its playground and start again |\n| c | Check |\n| h | Hint |\n| s | Skip the challenge |\n" +
-	"| p | Previous lesson |\n| n | Next lesson |\n| ? | This help |\n| q | Quit |\n" +
+	"| p | Previous lesson |\n| n | Next lesson |\n| f | Full screen: show only this pane. Press again for all three |\n| ? | This help |\n| q | Quit |\n" +
 	"| ↑ ↓ | Scroll this pane |\n\n" +
 	"Click a pane to type in it. Click **Browse** or **Top** at the bottom to switch tabs.\n\n" +
 	"## Commands\n\nRun these in your terminal when you are not in a lesson:\n\n" +

@@ -96,6 +96,7 @@ Assume a full-screen, wide terminal. Do not build medium or phone layouts. If th
 | s | Skip the challenge |
 | p | Previous lesson |
 | n | Next lesson |
+| f | Full screen: zoom the Lesson pane to fill the window, or press again to bring back all three panes |
 | ? | Full key and command help |
 | q | Quit, after confirmation |
 

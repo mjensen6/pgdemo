@@ -103,9 +103,20 @@ click 19 45;  [[ $(focus) == Top.0 ]]    || fail "clicking the Top tab did not s
 click 3 45;   [[ $(focus) == Lesson.1 || $(focus) == Lesson.2 ]] || fail "clicking the Lesson tab did not switch back"
 click 10 10;  [[ $(focus) == Lesson.0 ]] || fail "clicking the Lesson pane did not select it"
 
+# f zooms the Lesson pane to the whole window, and f again brings back all three.
+zoomed() { $IN display-message -p -t pgdemo:Lesson '#{window_zoomed_flag}'; }
+key f; sleep 0.5; [[ $(zoomed) == 1 ]] || fail "f did not zoom the Lesson pane"
+screen | grep -qF "━ SQL " && fail "the SQL pane still shows while zoomed"
+key f; sleep 0.5; [[ $(zoomed) == 0 ]] || fail "a second f did not bring back the three panes"
+wait_for "━ SQL "
+ok "f toggles the Lesson pane full screen"
+
 quit
 ./pgdemo list | grep -q "●   1  mvcc-bloat" || fail "pgdemo list does not show lesson 1 as done"
-[[ $(./pgdemo list | grep -cE '^  [○◐●·] +[0-9]+') == 43 ]] || fail "pgdemo list does not show all 43 lessons"
+# An alternation, not [○◐●·]: in a non-UTF-8 locale a bracket matches one
+# byte, and these symbols are several bytes each, so nothing would match.
+count=$(./pgdemo list | grep -cE '^  (○|◐|●|·) +[0-9]+' || true)
+[[ $count == 43 ]] || fail "pgdemo list shows $count lessons, not 43"
 ok "4. c fails before solving, passes after, and list shows ●"
 
 # 8. Running pgdemo again restores progress and the playground.

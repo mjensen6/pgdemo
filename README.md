@@ -37,7 +37,7 @@ Tested on Linux. If you try it on macOS or anywhere else, please open an issue a
 - **SQL**: your own prompt, already connected to the lesson's playground. Click it to type.
 - **Live View**: the numbers the lesson wants you to watch, refreshed every second.
 
-Click to switch panes and tabs. Press `?` for every key. Each lesson has its own playground database, so break whatever you like. `pgdemo 1 reset` rebuilds it.
+Click to switch panes and tabs. Press `f` to give the Lesson pane the whole screen, and `f` again to bring back the other panes. Press `?` for every key. Each lesson has its own playground database, so break whatever you like. `pgdemo 1 reset` rebuilds it.
 
 ## Commands
 
