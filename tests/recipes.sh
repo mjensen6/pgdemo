@@ -14,8 +14,9 @@ verbose=false
 
 image=${PGDEMO_IMAGE:-pgdemo:latest}
 c=pgdemo-recipes-test-$$
+# -v removes the container's unnamed data volume too, which -f alone leaves behind.
 fail() { echo "FAIL: $*" >&2; exit 1; }
-trap 'docker rm -f "$c" >/dev/null 2>&1 || true' EXIT
+trap 'docker rm -fv "$c" >/dev/null 2>&1 || true' EXIT
 
 # What each recipe's output must contain. Every recipe needs an entry, so
 # a new recipe can't go untested.
