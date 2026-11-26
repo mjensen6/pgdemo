@@ -398,6 +398,11 @@ Phase 2 result: lazysql v0.7.0 works with Postgres 19 over the container's local
 - A course test runs every lesson's steps and solution from a clean start, then requires its check to pass.
 - Add a simple GitHub Actions workflow that runs the course test. Keep it simple for now.
 - Generate the README's numbered lesson list from `course.yaml`, and fail the tests if it is out of date.
+- `tests/recipes.sh` runs every recipe against `recipes/sample-data.sql` in a throwaway container of its own, and checks each output for what the recipe should find. It fails if a recipe has no expectation or is missing from `recipes/README.md`. CI runs it after the course test.
+
+## Recipes
+
+`recipes/` is reference SQL, separate from the lessons: one everyday job per file, such as a data diff or finding unused indexes. Recipes are plain SQL that runs on any database, so they use no player features. Each starts with a comment that says what it does, when to use it, what to change, and whether it writes. A recipe that writes does a dry run, or says so in capitals. Compose mounts the folder at `/opt/pgdemo/recipes`, so `pgdemo psql` can run one with `\i`.
 
 ### Phase 1 is done when
 

@@ -30,6 +30,8 @@ services:
       - pgdata:/var/lib/postgresql
       # Lessons come from the checkout, so editing one needs no rebuild.
       - ./lessons:/opt/pgdemo/lessons:ro
+      # Recipes too, so pgdemo psql can run one with \i.
+      - ./recipes:/opt/pgdemo/recipes:ro
     healthcheck:
       test: pg_isready -U postgres
       interval: 1s
