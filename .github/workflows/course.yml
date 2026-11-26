@@ -36,6 +36,8 @@ jobs:
         run: ./scripts/readme --check
       - name: Course test
         run: ./tests/course.sh
+      - name: Recipes test
+        run: ./tests/recipes.sh
       - name: Publish this architecture's image
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:

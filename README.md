@@ -147,6 +147,15 @@ Your progress is in the `progress` table of the `pgdemo` database, so you can qu
 
 <!-- lessons:end -->
 
+## Recipes
+
+[`recipes/`](recipes/README.md) holds ready-to-run SQL for everyday jobs, outside the lessons: diffing two tables or two databases, finding duplicates, table sizes and bloat, unused and missing indexes, who's blocking whom, and replication lag. Each is a plain `.sql` file you can run on any database. To try one in pgdemo, open `pgdemo psql`, then:
+
+```
+\i /opt/pgdemo/recipes/sample-data.sql
+\i /opt/pgdemo/recipes/data/diff-two-tables.sql
+```
+
 ## Writing a lesson
 
 Each lesson is one Markdown file, `lessons/<name>.md`, and `lessons/course.yaml` sets the order. See [`lessons/mvcc-bloat.md`](lessons/mvcc-bloat.md) for the format and [`docs/BUILD-SPEC.md`](docs/BUILD-SPEC.md) for the full design. Lessons are read from your checkout, so edits show up without a rebuild.
